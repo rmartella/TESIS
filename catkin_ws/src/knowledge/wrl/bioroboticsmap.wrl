@@ -1,0 +1,31 @@
+;******************************************************************************
+;* File: random_1.wrl				     			      *
+;* Purpose: Definition of the forbidden and allowed areas in the Robot's      *
+;*          world. These areas are derivated from the objects in the	      *
+;*	    world.				      			      *
+;******************************************************************************
+ 
+( dimensions random 2.000000 2.000000 )
+ 
+( polygon wall external_wall_1 0.000 0.000 0.020 0.000 0.020 4.380 0.000 4.380 )
+( polygon wall external_wall_2 0.020 0.000 2.470 0.000 2.470 0.020 0.020 0.020 )
+( polygon wall external_wall_3 2.470 0.000 2.490 0.000 2.490 4.400 2.470 4.400 )
+( polygon wall external_wall_4 0.000 4.380 1.650 4.380 1.650 4.400 0.000 4.400 )
+( polygon wall external_wall_5 2.490 0.000 4.860 0.000 4.860 0.020 2.490 0.020 )
+( polygon wall external_wall_6 4.860 0.000 4.880 0.000 4.880 4.380 4.860 4.380 )
+( polygon wall external_wall_7 2.490 4.380 3.960 4.380 3.960 4.400 2.490 4.400 )
+( polygon wall external_wall_8 0.000 6.640 4.070 6.640 4.070 6.660 0.000 6.660 )
+( polygon wall external_wall_9 0.000 6.660 0.020 6.660 0.020 16.785 0.000 16.785 )
+( polygon wall external_wall_10 0.000 16.785 5.310 16.785 5.310 16.805 0.000 16.805 )
+( polygon wall external_wall_11 5.290 6.640 5.310 6.640 5.310 16.785 5.290 16.785 )
+( polygon wall external_wall_12 0.000 4.380 0.000 4.400 -4.000 4.400 -4.000 4.380 )
+( polygon wall external_wall_13 4.860 4.380 8.000 4.380 8.000 4.400 4.860 4.400 )
+( polygon wall external_wall_14 0.000 6.640 0.000 6.660 -4.000 6.660 -4.000 6.640 )
+( polygon wall external_wall_15 5.310 6.640 8.000 6.640 8.000 6.660 5.310 6.660 )
+( polygon obstacle obs1 0.86 5.98 2.9 5.98 2.9 6.63 0.86 6.63 )
+( polygon obstacle obs2 3.95 6.66 3.95 7.24 2.8 7.24 2.8 6.66 )
+( polygon obstacle obs3 2.8 7.6 0.62 7.6 0.62 6.66 2.8 6.66 )
+( polygon obstacle obs4 4.557 7.77 5.284 7.77 5.284 9.26 4.557 9.26 )
+( polygon obstacle obs5 2.94 8.51 2.94 10.59 2.14 10.59 2.14 8.51 )
+( polygon obstacle obs6 1.07 7.86 1.07 11.8 0.02 11.8 0.02 7.86 )
+( polygon obstacle obs6 3.55 10.81 5.28 10.81 5.28 11.87 3.55 11.87 )

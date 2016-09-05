@@ -1,0 +1,5 @@
+geometry_msgs/Pose2D goalPose
+bool correctAngle
+int32 timeout
+---
+bool success

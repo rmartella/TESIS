@@ -1,0 +1,38 @@
+<launch>
+    <!-- <remap from="/hardware/mobile_base/odometry" to="/navigation/localization/base_pose_ground_truth"/>
+    <remap from="/navigation/localization/amcl_pose" to="/navigation/localization/current_pose"/> -->
+    <param name="robot_description" command="cat $(find knowledge)/urdf/justina.xml" />
+    <param name="file_env" value="$(find knowledge)/wrl/bioroboticsmap.wrl"/>
+
+    <!-- <node name="gmapping_link_publisher" pkg="tf" type="static_transform_publisher" args="0 0 0.0 0 0 0 map odom 100"/> -->
+    
+    <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher"/>
+
+    <node name="mobile_base" pkg="mobile_base" type="omni_base_simul_node.py" output="screen"/>
+    <node name="left_arm" pkg="arms" type="left_arm_simul_node.py" output="screen"/>
+    <node name="right_arm" pkg="arms" type="right_arm_simul_node.py" output="screen"/>
+    <node name="head" pkg="head" type="head_simul_node.py" output="screen"/>
+    <node name="torso" pkg="torso" type="torso_simul_node.py" output="screen"/>
+
+    <node name="environment" pkg="environment" type="environment" output="screen"/>
+
+    <node name="laser_scan_publisher" pkg="laser_simul" type="laser_scan_publisher"/>
+
+    <!-- <node name="basic_motion" pkg="navigation" type="basic_motion" output="screen"/> -->
+
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find knowledge)/hri/rviz_gpsr.rviz"/>
+
+    <node name="gmapping" pkg="gmapping" type="slam_gmapping" args="scan:=/scan" output="screen">
+        <param name="map_update_interval" value="0.1" />
+        <param name="maxUrange" value="7.9"/>
+        <param name="linearUpdate" value="0.2"/>
+        <param name="angularUpdate" value="0.1"/>
+        <param name="xmin" value="-50"/>
+        <param name="ymin" value="-20"/>
+        <param name="xmax" value="50"/>
+        <param name="ymax" value="20"/>
+        <param name="maxRange" value="8.0"/>
+        <param name="minimumScore" value="100"/>
+    </node>
+
+ </launch>

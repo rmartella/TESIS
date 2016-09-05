@@ -1,0 +1,4 @@
+string location
+int32 timeout
+---
+bool success

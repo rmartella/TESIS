@@ -1,0 +1,5 @@
+float32 dist
+bool moveLateral
+int32 timeout
+---
+bool success

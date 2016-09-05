@@ -1,0 +1,301 @@
+#include "ros/ros.h"
+#include "tf/transform_listener.h"
+#include "std_msgs/Float32MultiArray.h"
+
+#include "actionlib/server/simple_action_server.h"
+
+#include "navigation/LowLevelControl.h"
+/*#include "common/GoalDist.h"
+#include "common/GoalDistAngle.h"
+#include "common/GoalPose.h"
+#include "common/GoalPath.h"*/
+
+#include "common/GoalDistAction.h"
+#include "common/GoalDistAngleAction.h"
+#include "common/GoalPathAction.h"
+#include "common/GoalPoseAction.h"
+
+#include <iostream>
+
+class BasicMotionActions{
+public:
+	BasicMotionActions(std::string dist_name, std::string dist_angle_name, std::string pose_name, std::string path_name) :
+			dist_name(dist_name),  dist_angle_name(dist_angle_name), pose_name(pose_name), path_name(path_name){
+		/*as1(n, dist_name, boost::bind(&BasicMotionAction::goalDistCallback, this, _1), false);
+		as2(n, dist_angle_name, boost::bind(&BasicMotionAction::goalDistAngleCallback, this, _1), false);
+		as3(n, pose_name, boost::bind(&BasicMotionAction::goalPoseCallback, this, _1), false);
+		as4(n, path_name, boost::bind(&BasicMotionAction::goalPathCallback, this, _1), false);
+		as1.start();
+		as2.start();
+		as3.start();
+		as4.start();*/
+		//initRosConnection(&n);
+	}
+	void initRosConnection(ros::NodeHandle *n);
+	void doGoalMotion(float goalX, float goalY, float goalTheta, bool correctAngle, bool moveBackwards, bool moveLateral, float timeOut, bool &success);
+	void doAngleMotion(float goalTheta, float timeOut, bool &success);
+	/*bool goalDistCallback(common::GoalDist::Request& req, common::GoalDist::Response& resp);
+	bool goalDistAngleCallback(common::GoalDistAngle::Request& req, common::GoalDistAngle::Response& resp);
+	bool goalPoseCallback(common::GoalPose::Request& req, common::GoalPose::Response& resp);
+	bool goalPathCallback(common::GoalPath::Request& req, common::GoalPath::Response& resp);*/
+protected:
+	tf::TransformListener* tf_listener;
+	ros::Publisher pubSpeeds;
+	ros::Publisher pubCmdVel;
+	LowLevelControl control;
+
+	/*actionlib::SimpleActionServer<common::GoalDistAction> as1;
+	actionlib::SimpleActionServer<common::GoalDistAngleAction> as2;
+	actionlib::SimpleActionServer<common::GoalPathAction> as3;
+	actionlib::SimpleActionServer<common::GoalPoseAction> as4;*/
+
+	std::string dist_name;
+	std::string dist_angle_name;
+	std::string pose_name;
+	std::string path_name;
+};
+
+void BasicMotionActions::initRosConnection(ros::NodeHandle *n){
+	pubSpeeds = n->advertise<std_msgs::Float32MultiArray>("/hardware/mobile_base/speeds",1);
+	pubCmdVel = n->advertise<geometry_msgs::Twist>("/hardware/mobile_base/cmd_vel",1);
+	tf_listener = new tf::TransformListener();
+	tf_listener->waitForTransform("map", "base_link", ros::Time(0), ros::Duration(5.0));
+    tf_listener->waitForTransform("odom", "base_link", ros::Time(0), ros::Duration(5.0));
+    control.SetRobotParams(0.48);
+}
+
+/*	bool success;
+	tf::StampedTransform transform;
+    tf_listener->lookupTransform("odom", "base_link", ros::Time(0), transform);
+    float currentX = transform.getOrigin().x();
+    float currentY = transform.getOrigin().y();
+    float currentTheta = tf::getYaw(transform.getRotation());
+
+    float goalX, goalY, goalTheta;
+
+    if(!req.moveLateral){
+    	goalX = currentX + req.dist*cos(currentTheta);
+	    goalY = currentY + req.dist*sin(currentTheta);
+	    if(req.dist > 0)
+	        goalTheta = atan2(goalY - currentY, goalX - currentX);
+	    else 
+	    	goalTheta = currentTheta;
+    }
+    else{
+    	goalX = currentX + req.dist*cos(currentTheta + M_PI/2);
+	    goalY = currentY + req.dist*sin(currentTheta + M_PI/2);
+	    goalTheta = currentTheta;
+    }
+
+    doGoalMotion(goalX, goalY, goalTheta, false,req.dist < 0 ? true: false, req.moveLateral, req.timeout, success);
+
+    resp.success = success;
+
+	return true;
+}
+
+bool BasicMotion::goalDistAngleCallback(common::GoalDistAngle::Request& req, common::GoalDistAngle::Response& resp){
+	std::cout << "Recived goal distance, angle:" << req.dist << "," << req.angle << std::endl;
+	bool success;
+	tf::StampedTransform transform;
+    tf_listener->lookupTransform("odom", "base_link", ros::Time(0), transform);
+    float currentX = transform.getOrigin().x();
+    float currentY = transform.getOrigin().y();
+    //tf::Quaternion q = transform.getRotation();
+    //float currentTheta = atan2((float)q.z(), (float)q.w()) * 2;
+    float currentTheta = tf::getYaw(transform.getRotation());
+
+    float goalX, goalY, goalTheta;
+    
+    goalTheta = currentTheta + req.angle;
+    if (goalTheta > 2 * M_PI)
+		goalTheta -= 4 * M_PI;
+	else if (goalTheta < -2 * M_PI)
+		goalTheta += 4 * M_PI;
+	float timeout = req.timeout;
+	boost::posix_time::ptime prev = boost::posix_time::second_clock::local_time();
+    boost::posix_time::ptime curr;
+    doAngleMotion(goalTheta, req.timeout, success);
+
+    if(success){
+    	tf_listener->lookupTransform("odom", "base_link", ros::Time(0), transform);
+	    currentX = transform.getOrigin().x();
+	    currentY = transform.getOrigin().y();
+	    currentTheta = tf::getYaw(transform.getRotation());
+		goalX = currentX + req.dist * cos(currentTheta);
+		goalY = currentY + req.dist * sin(currentTheta);
+		goalTheta = currentTheta;
+
+		curr = boost::posix_time::second_clock::local_time();
+		doGoalMotion(goalX, goalY, goalTheta, false, req.dist < 0 ? true: false, false, req.timeout - (curr - prev).total_milliseconds(), success);
+    }
+
+	resp.success = success;
+
+	return true;
+
+}
+
+bool BasicMotion::goalPoseCallback(common::GoalPose::Request& req, common::GoalPose::Response& resp){
+	bool success;
+	doGoalMotion(req.pose.x, req.pose.y, req.pose.theta, true, false, false, req.timeout, success);
+	resp.success = success;
+	return true;
+}
+
+bool BasicMotion::goalPathCallback(common::GoalPath::Request& req, common::GoalPath::Response& resp){
+	nav_msgs::Path goalPath = req.path;
+	float goalX, goalY, goalTheta;
+	bool success;
+	boost::posix_time::ptime initTime = boost::posix_time::second_clock::local_time();
+    boost::posix_time::ptime curr;
+    int indexPath = 0;
+	do{
+		goalX = goalPath.poses[indexPath].pose.position.x;
+		goalY = goalPath.poses[indexPath].pose.position.y;
+		if(indexPath == goalPath.poses.size() - 1)
+			goalTheta = tf::getYaw(goalPath.poses[indexPath].pose.orientation);
+		doGoalMotion(goalX, goalY, goalTheta, true, false, false, req.timeout - (curr - initTime).total_milliseconds(), success);
+		if(success)
+			indexPath++;
+		curr = boost::posix_time::second_clock::local_time();
+	} while(success);
+	resp.success = success;
+	return true;
+}
+
+void BasicMotion::doGoalMotion(float goalX, float goalY, float goalTheta, bool correctAngle, bool moveBackwards, 
+		bool moveLateral, float timeout, bool& success){
+	ros::Rate rate(30);
+	bool correctFinalAngle = false;
+	tf::StampedTransform transform;
+	float currentX, currentY, currentTheta;
+	float errorAngle;
+
+	std_msgs::Float32MultiArray speeds;
+	speeds.data.push_back(0);
+    speeds.data.push_back(0);
+    geometry_msgs::Twist twist;
+
+    boost::posix_time::ptime prev = boost::posix_time::second_clock::local_time();
+    boost::posix_time::ptime curr = prev;
+    bool motionFinished = false;
+
+	while(ros::ok() && (curr - prev).total_milliseconds() < timeout && !motionFinished){
+		if(!correctFinalAngle){
+			tf_listener->lookupTransform("odom", "base_link", ros::Time(0), transform);
+			currentX = transform.getOrigin().x();
+	        currentY = transform.getOrigin().y();
+			currentTheta = tf::getYaw(transform.getRotation());
+			float errorX = goalX - currentX;
+	        float errorY = goalY - currentY;
+	        float error = sqrt(pow(errorX,2) + pow(errorY,2));
+	        if(error < 0.035){
+	            speeds.data[0] = 0;
+	            speeds.data[1] = 0;
+	            pubSpeeds.publish(speeds);
+	            if(correctAngle)
+	            	correctFinalAngle = true;
+	            else
+	            	motionFinished = true;
+	        }
+	        else{
+	            if(!moveLateral){
+	                control.CalculateSpeeds(currentX, currentY, currentTheta, goalX, goalY,
+	                                        speeds.data[0], speeds.data[1], moveBackwards);
+	                pubSpeeds.publish(speeds);
+	            }
+	            else{
+	                control.CalculateSpeedsLateral(currentX, currentY, currentTheta, goalX, goalY,
+	                                               twist.linear.y, twist.angular.z, moveBackwards);
+	                pubCmdVel.publish(twist);
+	            }
+	        }
+    	}
+        if(correctFinalAngle){
+            tf_listener->lookupTransform("odom", "base_link", ros::Time(0), transform);
+		    currentTheta = tf::getYaw(transform.getRotation());
+		    errorAngle = goalTheta - currentTheta;
+		    if(errorAngle > M_PI) errorAngle -= 2*M_PI;
+		    if(errorAngle <= -M_PI) errorAngle += 2*M_PI;
+
+		    if(fabs(errorAngle) < 0.01){
+		        speeds.data[0] = 0;
+		        speeds.data[1] = 0;
+		        pubSpeeds.publish(speeds);
+		        motionFinished = true;
+		    }
+		    else{
+		        control.CalculateSpeeds(currentTheta, goalTheta, speeds.data[0], speeds.data[1]);
+		        pubSpeeds.publish(speeds);
+		    }
+        }
+        rate.sleep();
+        curr = boost::posix_time::second_clock::local_time();
+	}
+	if(!motionFinished){
+		speeds.data[0] = 0;
+		speeds.data[1] = 0;
+		pubSpeeds.publish(speeds);
+	}
+	success = motionFinished;
+}*/
+
+/*void BasicMotion::doAngleMotion(float goalTheta, float timeout, bool& success){
+	ros::Rate rate(30);
+	tf::StampedTransform transform;
+	float currentX, currentY, currentTheta;
+	float errorAngle;
+
+	std_msgs::Float32MultiArray speeds;
+	speeds.data.push_back(0);
+    speeds.data.push_back(0);
+    geometry_msgs::Twist twist;
+
+    boost::posix_time::ptime prev = boost::posix_time::second_clock::local_time();
+    boost::posix_time::ptime curr = prev;
+    bool motionFinished = false;
+
+	while(ros::ok() && (curr - prev).total_milliseconds() < timeout && !motionFinished){
+		tf_listener->lookupTransform("odom", "base_link", ros::Time(0), transform);
+	    currentTheta = tf::getYaw(transform.getRotation());
+	    errorAngle = goalTheta - currentTheta;
+	    if(errorAngle > M_PI) errorAngle -= 2*M_PI;
+	    if(errorAngle <= -M_PI) errorAngle += 2*M_PI;
+
+	    if(fabs(errorAngle) < 0.01){
+	        speeds.data[0] = 0;
+	        speeds.data[1] = 0;
+	        pubSpeeds.publish(speeds);
+	        motionFinished = true;
+	    }
+	    else{
+	        control.CalculateSpeeds(currentTheta, goalTheta, speeds.data[0], speeds.data[1]);
+	        pubSpeeds.publish(speeds);
+	    }
+	    rate.sleep();
+	    curr = boost::posix_time::second_clock::local_time();
+	}
+	if(!motionFinished){
+		speeds.data[0] = 0;
+		speeds.data[1] = 0;
+		pubSpeeds.publish(speeds);
+	}
+	success = motionFinished;
+}*/
+
+int main(int argc, char ** argv){
+	ros::init(argc, argv, "basic_motion");
+	ros::NodeHandle n;
+
+	BasicMotionActions basicMotionActions("", "", "", "");
+	//basicMotion.initRosConnection(&n);
+	/*ros::ServiceServer ssd = n.advertiseService("goal_dist_service", &BasicMotion::goalDistCallback, &basicMotion);
+	ros::ServiceServer ssda = n.advertiseService("goal_distangle_service", &BasicMotion::goalDistAngleCallback, &basicMotion);
+	ros::ServiceServer ssp = n.advertiseService("goal_pose_service", &BasicMotion::goalPoseCallback, &basicMotion);
+	ros::ServiceServer sspp = n.advertiseService("goal_path_service", &BasicMotion::goalPathCallback, &basicMotion);*/
+
+
+	ros::spin();
+}
+
