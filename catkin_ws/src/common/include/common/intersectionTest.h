@@ -13,13 +13,13 @@
 
 #include "definition.h"
 #include "utilSimulator.h"
+#include "utilViz.h"
 #include <vector>
 #include <math.h>
 
- #include <Eigen/Dense>
+#include <Eigen/Dense>
 
 #define EPSILON 0.000001
-#define FLT_MAX 1000.00
 
 #define AXISTEST_X01(a, b, fa, fb) p0 = a*v0(1,0) - b*v0(2,0); p2 = a*v2(1,0) - b*v2(2,0); if(p0<p2) {min=p0; max=p2;} else {min=p2; max=p0;} rad = fa * boxhalfsize(1,0) + fb * boxhalfsize(2,0); if(min>rad || max<-rad) return 0;
 #define AXISTEST_X2(a, b, fa, fb) p0 = a*v0(1,0) - b*v0(2,0); p1 = a*v1(1,0) - b*v1(2,0); if(p0<p1) {min=p0; max=p1;} else {min=p1; max=p0;} rad = fa * boxhalfsize(1,0) + fb * boxhalfsize(2,0); if(min>rad || max<-rad) return 0;
@@ -173,77 +173,229 @@ bool testCircleWithPolygons(float posx, float posy, float radius,
 	return testcollision;
 }
 
-bool testSLABPlane(float p, float d, float min, float max, float &tmin){
-	float tmax = FLT_MAX;
-	if(abs(d) < EPSILON){
-		if(p < min || p > max) 
-			return false;
+bool testSLABPlane(float p, float d, float min, float max, float &tmin,
+		float &tmax) {
+	if (fabs(d) < 0.01)
+		return (p >= min && p <= max);
+
+	float ood = 1.0f / d;
+	float t1 = (min - p) * ood;
+	float t2 = (max - p) * ood;
+
+	if (t1 > t2) {
+		float aux = t1;
+		t1 = t2;
+		t2 = aux;
 	}
-	else{
-		float ood = 1.0f / d;
-		float t1 = (min - p) * ood;
-		float t2 = (max - p) * ood;
-		if(t1 > t2){
-			float aux = t1;
-			t1 = t2;
-			t2 = aux;
-		}
-		if (t1 > tmin)
-			tmin = t1;
-		if (t2 > tmax)
-			tmax = t2;
-		if (tmin > tmax)
-			return false;
-	}
+
+	if (t1 > tmin)
+		tmin = t1;
+	if (t2 < tmax)
+		tmax = t2;
+
+	if (tmin > tmax)
+		return false;
+
 	return true;
 }
 
-bool intersectRayAABB(Vertex2 p, Vertex2 d, AABB a){
-	std::cout << "P(" << p.x << "," << p.y << ")" << std::endl;
-	std::cout << "D(" << d.x << "," << d.y << ")" << std::endl;
-	std::cout << "AAAB(" << a.minx << "," << a.maxx << "," << a.miny << "," << a.maxy << ")" << std::endl;
-	bool test = false;
-	float tmin;
-	Vertex2 q;
-	tmin = 0.0f;
-	test = testSLABPlane(p.x, d.x, a.minx, a.maxx, tmin);
-	if(!test)
-		test = testSLABPlane(p.y, d.y, a.miny, a.maxy, tmin);
-	q.x = p.x + d.x * tmin;
-	q.y = p.y + d.y * tmin;
-	return test;
+bool intersectRayAABB(Vertex2 p1, Vertex2 p2, Vertex2 d, AABB a) {
+	float tmin = -FLT_MAX, tmax = FLT_MAX;
+
+	if (!testSLABPlane(p1.x, d.x, a.minx, a.maxx, tmin, tmax))
+		return false;
+	if (!testSLABPlane(p1.y, d.y, a.miny, a.maxy, tmin, tmax))
+		return false;
+
+	if (fabs(d.x) < 0.01 || fabs(d.y) < 0.01) {
+		if ((p1.x >= a.minx && p1.x <= a.maxx && p1.y >= a.miny
+				&& p1.y <= a.maxy)
+				|| (p2.x >= a.minx && p2.x <= a.maxx && p2.y >= a.miny
+						&& p2.y <= a.maxy))
+			return true;
+		else
+			return false;
+	}
+
+	float q_x = p1.x + d.x * tmin;
+	float q_y = p1.y + d.y * tmin;
+
+	float sminx = p1.x, smaxx = p2.x, sminy = p1.y, smaxy = p2.y;
+
+	if (sminx > smaxx) {
+		sminx = p2.x;
+		smaxx = p1.x;
+	}
+	if (sminy > smaxy) {
+		sminy = p2.y;
+		smaxy = p1.y;
+	}
+
+	if (q_x >= sminx && q_x <= smaxx && q_y >= sminy && q_y <= smaxy)
+		return true;
+
+	return false;
 }
 
-bool testAABBWithPolygons(float posx, float posy, float theta, float width, float height, Polygon * polygons, int num_polygons){
+/*bool intersectRayAABB(Vertex2 p1, Vertex2 p2, Vertex2 d, AABB a) {
+ float tmin = -FLT_MAX, tmax = FLT_MAX;
+
+ if (fabs(d.x) < 0.01)
+ return (p1.x >= a.minx && p1.x <= a.maxx);
+
+ float ood = 1.0f / d.x;
+ float t1 = (a.minx - p1.x) * ood;
+ float t2 = (a.maxx - p1.x) * ood;
+
+ if (t1 > t2) {
+ float aux = t1;
+ t1 = t2;
+ t2 = aux;
+ }
+
+ if (t1 > tmin)
+ tmin = t1;
+ if (t2 < tmax)
+ tmax = t2;
+
+ if (tmin > tmax)
+ return false;
+
+ if (fabs(d.y) < 0.01)
+ return (p1.y >= a.miny && p1.y <= a.maxy);
+
+ ood = 1.0f / d.y;
+ t1 = (a.miny - p1.y) * ood;
+ t2 = (a.maxy - p1.y) * ood;
+
+ if (t1 > t2) {
+ float aux = t1;
+ t1 = t2;
+ t2 = aux;
+ }
+
+ if (t1 > tmin)
+ tmin = t1;
+ if (t2 < tmax)
+ tmax = t2;
+
+ if (tmin > tmax)
+ return false;
+
+ float q_x = p1.x + d.x * tmin;
+ float q_y = p1.y + d.y * tmin;
+
+ float sminx = p1.x, smaxx = p2.x, sminy = p1.y, smaxy = p2.y;
+
+ if (sminx > smaxx) {
+ sminx = p2.x;
+ smaxx = p1.x;
+ }
+ if (sminy > smaxy) {
+ sminy = p2.y;
+ smaxy = p1.y;
+ }
+
+ if (q_x >= sminx && q_x <= smaxx && q_y >= sminy && q_y <= smaxy)
+ return true;
+
+ return false;
+ }*/
+
+bool testAABBWithPolygons(float posx, float posy, float theta, float width,
+		float height, Polygon * polygons, int num_polygons,
+		ros::Publisher * marker_pub) {
 	bool testcollision = false;
-	AABB shapeRobot(posx - width/2, posx + width/2, posy - height/2, posy + height/2, 0, 0);
-	Eigen::Matrix4d rotRobot = Eigen::Affine3d(Eigen::AngleAxisd(theta, Eigen::Vector3d(0, 0, 1))).matrix();
-	Eigen::Matrix3d rotation = rotRobot.block<3, 3>(0, 0);
+
+	Eigen::Vector3d trans = Eigen::Vector3d::Ones();
+	trans(0, 0) = posx;
+	trans(1, 0) = posy;
+	trans(2, 0) = 0.0;
+
+	Eigen::Matrix4d ori = Eigen::Affine3d(
+			Eigen::AngleAxisd(theta, Eigen::Vector3d(0, 0, 1))).matrix();
+
+	Eigen::Matrix3d rotation = ori.block<3, 3>(0, 0);
 	Eigen::Matrix3d inv = rotation.inverse();
+
+	Eigen::Vector3d centerBox = inv * trans;
+	AABB shapeRobot(centerBox(0, 0) - width / (float) 2.0f,
+			centerBox(0, 0) + width / (float) 2.0f,
+			centerBox(1, 0) - height / (float) 2.0f,
+			centerBox(1, 0) + height / (float) 2.0f, 0, 0);
+
+	std::vector<biorobotics::Segment> segs;
+
+	segs.push_back(
+			biorobotics::Segment(
+					biorobotics::Vertex2(centerBox(0, 0) - width / (float) 2.0f,
+							centerBox(1, 0) - height / (float) 2.0f),
+					biorobotics::Vertex2(centerBox(0, 0) + width / (float) 2.0f,
+							centerBox(1, 0) - height / (float) 2.0f)));
+	segs.push_back(
+			biorobotics::Segment(
+					biorobotics::Vertex2(centerBox(0, 0) + width / (float) 2.0f,
+							centerBox(1, 0) - height / (float) 2.0f),
+					biorobotics::Vertex2(centerBox(0, 0) + width / (float) 2.0f,
+							centerBox(1, 0) + height / (float) 2.0f)));
+	segs.push_back(
+			biorobotics::Segment(
+					biorobotics::Vertex2(centerBox(0, 0) + width / (float) 2.0f,
+							centerBox(1, 0) + height / (float) 2.0f),
+					biorobotics::Vertex2(centerBox(0, 0) - width / (float) 2.0f,
+							centerBox(1, 0) + height / (float) 2.0f)));
+	segs.push_back(
+			biorobotics::Segment(
+					biorobotics::Vertex2(centerBox(0, 0) - width / (float) 2.0f,
+							centerBox(1, 0) + height / (float) 2.0f),
+					biorobotics::Vertex2(centerBox(0, 0) - width / (float) 2.0f,
+							centerBox(1, 0) - height / (float) 2.0f)));
 
 	for (int i = 0; i < num_polygons && !testcollision; i++) {
 		Polygon polygon = polygons[i];
 		for (int j = 0; j < polygon.num_vertex && !testcollision; j++) {
-			Eigen::Vector3d pe = Eigen::Vector3d::Zero();
-			Eigen::Vector3d de = Eigen::Vector3d::Zero();
-			if (j < polygon.num_vertex - 1) {
-				pe(0,0) = polygon.vertex[j].x;
-				pe(1,0) = polygon.vertex[j].y;
-				de(0,0) = polygon.vertex[j + 1].x - polygon.vertex[j].x;
-				de(1,0) = polygon.vertex[j + 1].y - polygon.vertex[j].y;
-			} else {
-				pe(0,0) = polygon.vertex[j].x;
-				pe(1,0) = polygon.vertex[j].y;
-				de(0,0) = polygon.vertex[0].x - polygon.vertex[j].x;
-				de(1,0) = polygon.vertex[0].y - polygon.vertex[j].y;
+			Vertex2 v1;
+			Vertex2 v2;
+			v1 = polygon.vertex[j];
+			if (j < polygon.num_vertex - 1)
+				v2 = polygon.vertex[j + 1];
+			else
+				v2 = polygon.vertex[0];
+
+			Eigen::Vector3d pe1 = Eigen::Vector3d::Ones();
+			Eigen::Vector3d pe2 = Eigen::Vector3d::Ones();
+
+			pe1(0, 0) = v1.x;
+			pe1(1, 0) = v1.y;
+			pe1(2, 0) = 0.0;
+			pe2(0, 0) = v2.x;
+			pe2(1, 0) = v2.y;
+			pe2(2, 0) = 0.0;
+
+			/*if ((pe2 - pe1).norm() > 0.05) {*/
+			Eigen::Vector3d peo = inv * pe1;
+			Eigen::Vector3d peo2 = inv * pe2;
+
+			Vertex2 p1(peo(0, 0), peo(1, 0));
+			Vertex2 p2(peo2(0, 0), peo2(1, 0));
+
+			Vertex2 d(p2.x - p1.x, p2.y - p1.y);
+			testcollision = intersectRayAABB(p1, p2, d, shapeRobot);
+			if (testcollision) {
+				segs.push_back(biorobotics::Segment(p1, p2));
+				std::cout << "Collision with segment: V1(" << v1.x << ","
+						<< v1.y << ")-" << "V2(" << v2.x << "," << v2.y << ")"
+						<< std::endl;
+				std::cout << "Collision with segment Aligned box: V1(" << p1.x
+						<< "," << p1.y << ")-" << "V2(" << p2.x << "," << p2.y
+						<< ")" << std::endl;
+				std::cout << "P:" << i << ",V:" << j << std::endl;
 			}
-			Eigen::Vector3d peo = inv * pe;
-			Eigen::Vector3d deo = inv * de;
-			Vertex2 p(peo(0,0), peo(1,0));
-			Vertex2 d(deo(0,0), deo(1,0));
-			testcollision = intersectRayAABB(p, d, shapeRobot);
+			//}
 		}
 	}
+
+	sendToVizSegments(segs, "rotation_polygons", marker_pub);
 	return testcollision;
 }
 

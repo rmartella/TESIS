@@ -14,7 +14,7 @@
 #include <ros/ros.h>
 #include <visualization_msgs/Marker.h>
 
-#include "utilMap.h"
+//#include "utilMap.h"
 #include "queue.h"
 
 namespace biorobotics {
@@ -166,6 +166,37 @@ void sendToVizEnvironment(biorobotics::Triangle * triangulationPtr,
 		marker_pub->publish(objects_marker);
 	if (walls_marker.points.size() > 0)
 		marker_pub->publish(walls_marker);
+}
+
+void sendToVizSegments(std::vector<biorobotics::Segment> segments, std::string ns, ros::Publisher * marker_pub){
+	visualization_msgs::Marker map_marker;
+	map_marker.header.frame_id = "/map";
+	map_marker.header.stamp = ros::Time::now();
+	map_marker.ns = ns;
+	map_marker.action = visualization_msgs::Marker::ADD;
+	map_marker.pose.orientation.w = 1.0;
+	map_marker.id = 2;
+	map_marker.type = visualization_msgs::Marker::LINE_LIST;
+	map_marker.scale.x = 0.02;
+	map_marker.color.r = 0.0;
+	map_marker.color.g = 0.0;
+	map_marker.color.b = 1.0;
+	map_marker.color.a = 1.0;
+
+	for(int i = 0; i < segments.size(); i++){
+		biorobotics::Segment segment = segments[i];
+		geometry_msgs::Point p;
+		p.x = segment.v1.x;
+		p.y = segment.v1.y;
+		p.z = 0.0;
+		map_marker.points.push_back(p);
+		p.x = segment.v2.x;
+		p.y = segment.v2.y;
+		p.z = 0.0;
+		map_marker.points.push_back(p);
+	}
+
+	marker_pub->publish(map_marker);
 }
 
 }

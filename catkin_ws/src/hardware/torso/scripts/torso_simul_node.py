@@ -64,7 +64,7 @@ def main():
     pubCurrentPose = rospy.Publisher("/hardware/torso/current_pose", Float32MultiArray, queue_size=1)
     pubGoalReached = rospy.Publisher("/hardware/torso/goal_reached", Bool, queue_size=1)
 
-    loop = rospy.Rate(30)
+    loop = rospy.Rate(60)
 
     global goalSpine
     global goalWaist
