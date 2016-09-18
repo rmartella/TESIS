@@ -23,12 +23,9 @@
     <node name="map_server" pkg="map_server" type="map_server" output="screen" 
                      args="$(find knowledge)/occupancy_grids/biorobotica_simul.yaml"/>
 
-    <!-- <node name="path_planning" pkg="path_planning" type="path_planning" output="screen"/> -->
     <node name="path_planning" pkg="path_planning" type="path_planning" output="screen">
-    	<!-- <rosparam file="$(find launch)/launch/costmap_common_params.yaml" command="load" ns="global_costmap" /> -->
     	<rosparam file="$(find launch)/launch/local_costmap_params.yaml" command="load" />
     	<rosparam file="$(find launch)/launch/global_costmap_params.yaml" command="load" />
-    	<!-- <rosparam file="$(find launch)/launch/params.yaml" command="load" ns="global_costmap" /> -->
     </node>
     <group ns="hardware">
 	    <node name="joy" pkg="joy" type="joy_node" output="screen"/>
@@ -37,6 +34,6 @@
 
     <!-- <node name="motion_planner" pkg="motion_planner" type="motion_planner" output="screen"/> -->
 
-    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find knowledge)/hri/rviz_gpsr.rviz"/>
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find knowledge)/rviz/rviz_navigation.rviz"/>
 
  </launch>

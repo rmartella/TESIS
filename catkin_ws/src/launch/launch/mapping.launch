@@ -20,7 +20,7 @@
 
     <!-- <node name="basic_motion" pkg="navigation" type="basic_motion" output="screen"/> -->
 
-    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find knowledge)/hri/rviz_gpsr.rviz"/>
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find knowledge)/rviz/rviz_mapping.rviz"/>
 
     <node name="gmapping" pkg="gmapping" type="slam_gmapping" args="scan:=/scan" output="screen">
         <param name="map_update_interval" value="1" />
