@@ -38,7 +38,7 @@ bool NavigationUtil::syncMoveDist(float dist, bool moveLateral, int timeout){
 
     actionlib::SimpleClientGoalState state = acMovDis->getState();
     if(state ==  actionlib::SimpleClientGoalState::SUCCEEDED)
-    	return true;
+    	return acMovDis->getResult()->success;
     else
     	return false;	
 }
@@ -65,8 +65,10 @@ bool NavigationUtil::syncMoveDistAngle(float dist, float theta, int timeout){
 	bool finished_before_timeout = acMovDisAngle->waitForResult(ros::Duration(0.0));
 
     actionlib::SimpleClientGoalState state = acMovDisAngle->getState();
-    if(state ==  actionlib::SimpleClientGoalState::SUCCEEDED)
-    	return true;
+    if(state ==  actionlib::SimpleClientGoalState::SUCCEEDED){
+    	common::GoalDistAngleResultConstPtr result = acMovDisAngle->getResult();
+    	return result->success;
+    }
     else
     	return false;
 }
@@ -96,7 +98,7 @@ bool NavigationUtil::syncMovePose(float goalX, float goalY, float goalTheta, int
 
     actionlib::SimpleClientGoalState state = acMovPose->getState();
     if(state ==  actionlib::SimpleClientGoalState::SUCCEEDED)
-    	return true;
+    	return acMovPose->getResult()->success;
     else
     	return false;
 }
@@ -122,7 +124,7 @@ bool NavigationUtil::syncMovePath(nav_msgs::Path path, int timeout){
 
     actionlib::SimpleClientGoalState state = acMovPath->getState();
     if(state ==  actionlib::SimpleClientGoalState::SUCCEEDED)
-    	return true;
+    	return acMovPath->getResult()->success;
     else
     	return false;
 }

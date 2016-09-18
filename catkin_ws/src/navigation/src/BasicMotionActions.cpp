@@ -18,24 +18,38 @@
 
 #include <iostream>
 
+enum ActionType{
+	DISTANCE,
+	DISTANCE_ANGLE,
+	POSE,
+	PATH
+};
+
 class BasicMotion {
 public:
 	void initRosConnection(ros::NodeHandle *n);
 	void doGoalMotion(float goalX, float goalY, float goalTheta,
 			bool correctAngle, bool moveBackwards, bool moveLateral,
-			float timeOut, bool &success, biorobotics::Polygon * polygons,
-			int num_polygons);
-	void doAngleMotion(float goalTheta, float timeOut, bool &success,
-			biorobotics::Polygon * polygons, int num_polygons);
+			float timeOut, bool &success, bool& preempted,  biorobotics::Polygon * polygons,
+			int num_polygons, ActionType actionType);
+	void doAngleMotion(float goalTheta, float timeOut, bool &success, bool& preempted,
+			biorobotics::Polygon * polygons, int num_polygons, ActionType actionType);
 	tf::TransformListener* getTfListener() {
 		return this->tf_listener;
 	}
+
+
+	actionlib::SimpleActionServer<common::GoalDistAction> * asd;
+	actionlib::SimpleActionServer<common::GoalDistAngleAction> * asda;
+	actionlib::SimpleActionServer<common::GoalPoseAction> * aspo;
+	actionlib::SimpleActionServer<common::GoalPathAction> * aspa;
 protected:
 	tf::TransformListener* tf_listener;
 	ros::Publisher pubSpeeds;
 	ros::Publisher pubCmdVel;
 	LowLevelControl control;
 	ros::Publisher pub;
+
 };
 
 void BasicMotion::initRosConnection(ros::NodeHandle *n) {
@@ -54,7 +68,7 @@ void BasicMotion::initRosConnection(ros::NodeHandle *n) {
 
 void BasicMotion::doGoalMotion(float goalX, float goalY, float goalTheta,
 		bool correctAngle, bool moveBackwards, bool moveLateral, float timeout,
-		bool& success, biorobotics::Polygon * polygons, int num_polygons) {
+		bool& success, bool& preempted, biorobotics::Polygon * polygons, int num_polygons, ActionType actionType) {
 	ros::Rate rate(30);
 	bool correctFinalAngle = false;
 	tf::StampedTransform transform;
@@ -70,10 +84,12 @@ void BasicMotion::doGoalMotion(float goalX, float goalY, float goalTheta,
 			boost::posix_time::second_clock::local_time();
 	boost::posix_time::ptime curr = prev;
 	bool motionFinished = false;
+	preempted = false;
 
 	while (ros::ok()
 			&& ((curr - prev).total_milliseconds() < timeout || timeout == 0)
-			&& !motionFinished) {
+			&& !motionFinished && !preempted) {
+
 		if (!correctFinalAngle) {
 			tf_listener->lookupTransform("odom", "base_link", ros::Time(0),
 					transform);
@@ -85,9 +101,17 @@ void BasicMotion::doGoalMotion(float goalX, float goalY, float goalTheta,
 			if (testCollision) {
 				std::cout << " ----- testCollision -----" << testCollision
 						<< std::endl;
-				speeds.data[0] = -0.3;
-				speeds.data[1] = -0.3;
+				if(moveBackwards){
+					speeds.data[0] = 0.3;
+					speeds.data[1] = 0.3;
+				}
+				else{
+					speeds.data[0] = -0.3;
+					speeds.data[1] = -0.3;
+				}
+
 				pubSpeeds.publish(speeds);
+				boost::this_thread::sleep(boost::posix_time::milliseconds(1000));
 				motionFinished = false;
 				break;
 			}
@@ -130,6 +154,7 @@ void BasicMotion::doGoalMotion(float goalX, float goalY, float goalTheta,
 				speeds.data[0] = -0.3;
 				speeds.data[1] = -0.3;
 				pubSpeeds.publish(speeds);
+				boost::this_thread::sleep(boost::posix_time::milliseconds(1000));
 				motionFinished = false;
 				break;
 			}
@@ -152,18 +177,49 @@ void BasicMotion::doGoalMotion(float goalX, float goalY, float goalTheta,
 		}
 		rate.sleep();
 		curr = boost::posix_time::second_clock::local_time();
+		ros::spinOnce();
+
+		switch(actionType){
+			case DISTANCE:
+				if (asd->isPreemptRequested()){
+        			ROS_INFO("%s: Preempted", " Action Distance");
+        			asd->setPreempted();
+        			preempted = true;
+      			}
+				break;
+			case DISTANCE_ANGLE:
+				if (asda->isPreemptRequested()){
+        			ROS_INFO("%s: Preempted", " Action Distance Angle");
+        			asda->setPreempted();
+        			preempted = true;
+      			}
+				break;
+			case POSE:
+				if (aspo->isPreemptRequested()){
+        			ROS_INFO("%s: Preempted", " Action Pose");
+        			aspo->setPreempted();
+        			preempted = true;
+      			}
+				break;
+			case PATH:
+				if (aspa->isPreemptRequested()){
+        			ROS_INFO("%s: Preempted", " Action Path");
+        			aspa->setPreempted();
+        			preempted = true;
+      			}
+				break;
+		}
 	}
-	boost::this_thread::sleep(boost::posix_time::milliseconds(1000));
 	if (!motionFinished) {
 		speeds.data[0] = 0;
 		speeds.data[1] = 0;
 		pubSpeeds.publish(speeds);
 	}
-	success = motionFinished;
+	success = motionFinished & !preempted;
 }
 
-void BasicMotion::doAngleMotion(float goalTheta, float timeout, bool& success,
-		biorobotics::Polygon * polygons, int num_polygons) {
+void BasicMotion::doAngleMotion(float goalTheta, float timeout, bool& success, bool& preempted, 
+		biorobotics::Polygon * polygons, int num_polygons, ActionType actionType) {
 	ros::Rate rate(30);
 	tf::StampedTransform transform;
 	float currentX, currentY, currentTheta;
@@ -178,10 +234,11 @@ void BasicMotion::doAngleMotion(float goalTheta, float timeout, bool& success,
 			boost::posix_time::second_clock::local_time();
 	boost::posix_time::ptime curr = prev;
 	bool motionFinished = false;
+	preempted = false;
 
 	while (ros::ok()
 			&& ((curr - prev).total_milliseconds() < timeout || timeout == 0)
-			&& !motionFinished) {
+			&& !motionFinished && !preempted) {
 		tf_listener->lookupTransform("odom", "base_link", ros::Time(0),
 				transform);
 		currentX = transform.getOrigin().x();
@@ -195,6 +252,7 @@ void BasicMotion::doAngleMotion(float goalTheta, float timeout, bool& success,
 			speeds.data[0] = -0.3;
 			speeds.data[1] = -0.3;
 			pubSpeeds.publish(speeds);
+			boost::this_thread::sleep(boost::posix_time::milliseconds(1000));
 			motionFinished = false;
 			break;
 		}
@@ -204,7 +262,7 @@ void BasicMotion::doAngleMotion(float goalTheta, float timeout, bool& success,
 		if (errorAngle <= -M_PI)
 			errorAngle += 2 * M_PI;
 
-		if (fabs(errorAngle) < 0.01) {
+		if (fabs(errorAngle) < 0.04) {
 			speeds.data[0] = 0;
 			speeds.data[1] = 0;
 			pubSpeeds.publish(speeds);
@@ -216,28 +274,64 @@ void BasicMotion::doAngleMotion(float goalTheta, float timeout, bool& success,
 		}
 		rate.sleep();
 		curr = boost::posix_time::second_clock::local_time();
+		ros::spinOnce();
+		switch(actionType){
+			case DISTANCE:
+				if (asd->isPreemptRequested()){
+        			ROS_INFO("%s: Preempted", " Action Distance");
+        			asd->setPreempted();
+        			preempted = true;
+      			}
+				break;
+			case DISTANCE_ANGLE:
+				if (asda->isPreemptRequested()){
+        			ROS_INFO("%s: Preempted", " Action Distance Angle");
+        			asda->setPreempted();
+        			preempted = true;
+      			}
+				break;
+			case POSE:
+				if (aspo->isPreemptRequested()){
+        			ROS_INFO("%s: Preempted", " Action Pose");
+        			aspo->setPreempted();
+        			preempted = true;
+      			}
+				break;
+			case PATH:
+				if (aspa->isPreemptRequested()){
+        			ROS_INFO("%s: Preempted", " Action Path");
+        			aspa->setPreempted();
+        			preempted = true;
+      			}
+				break;
+		}
 	}
-	boost::this_thread::sleep(boost::posix_time::milliseconds(1000));
 	if (!motionFinished) {
 		speeds.data[0] = 0;
 		speeds.data[1] = 0;
 		pubSpeeds.publish(speeds);
 	}
-	success = motionFinished;
+	success = motionFinished & !preempted;
 }
 
 class GoalDistAction {
 public:
-	GoalDistAction(std::string name, BasicMotion *bm) :
-			as(nh, name,
+	GoalDistAction(std::string name, BasicMotion *bm) : action_name(name), bm(bm), polygons_ptr(
+					0), num_polygons(0){
+		as = new actionlib::SimpleActionServer<common::GoalDistAction>(nh, name,
 					boost::bind(&GoalDistAction::executeCallback, this, _1),
-					false), action_name(name), bm(bm) {
-		as.start();
+					false);
+		as->start();
+		bm->asd = as;
 		envu.initRosConnection(&nh);
+		polygons_ptr = 0;
+	}
+	~GoalDistAction(){
+		delete as;
 	}
 	void executeCallback(const common::GoalDistGoalConstPtr msg) {
-		std::cout << "New Goal Dist angle:" << msg->dist << std::endl;
-		bool success;
+		std::cout << "New Goal Dist:" << msg->dist << std::endl;
+		bool success, preempted;
 		tf::StampedTransform transform;
 		tf::TransformListener* tf_listener = bm->getTfListener();
 		tf_listener->lookupTransform("odom", "base_link", ros::Time(0),
@@ -265,41 +359,46 @@ public:
 			goalTheta = currentTheta;
 		}
 
-		biorobotics::Polygon * polygons_ptr;
-		int num_polygons = 0;
 		polygons_ptr = envu.convertGeometryMsgToPolygons(envu.call(),
 				polygons_ptr, &num_polygons);
 
 		bm->doGoalMotion(goalX, goalY, goalTheta, false,
-				dist < 0 ? true : false, moveLateral, timeout, success,
-				polygons_ptr, num_polygons);
+				dist < 0 ? true : false, moveLateral, timeout, success, preempted,
+				polygons_ptr, num_polygons, DISTANCE);
 
-		if (success)
-			as.setSucceeded(result);
+
+		if(!preempted){
+			result.success = success;
+			as->setSucceeded(result);
+		}
 	}
 private:
 	std::string action_name;
 	ros::NodeHandle nh;
-	actionlib::SimpleActionServer<common::GoalDistAction> as;
+	actionlib::SimpleActionServer<common::GoalDistAction> * as;
 	common::GoalDistResult result;
 	BasicMotion * bm;
 	EnvironmentUtil envu;
+	biorobotics::Polygon * polygons_ptr;
+	int num_polygons;
 };
 
 class GoalDistAngleAction {
 public:
-	GoalDistAngleAction(std::string name, BasicMotion * bm) :
-			as(nh, name,
-					boost::bind(&GoalDistAngleAction::executeCallback, this,
-							_1), false), action_name(name), bm(bm), polygons_ptr(
+	GoalDistAngleAction(std::string name, BasicMotion * bm) : action_name(name), bm(bm), polygons_ptr(
 					0), num_polygons(0) {
-		as.start();
+		as = new actionlib::SimpleActionServer<common::GoalDistAngleAction>(nh, name,
+					boost::bind(&GoalDistAngleAction::executeCallback, this,
+							_1), false);
+		as->start();
+		bm->asda = as;
 		envu.initRosConnection(&nh);
+		polygons_ptr = 0;
 	}
 	void executeCallback(const common::GoalDistAngleGoalConstPtr msg) {
 		std::cout << "New Goal Dist angle:" << msg->dist << "," << msg->angle
 				<< std::endl;
-		bool success;
+		bool success, preempted;
 		tf::StampedTransform transform;
 		tf::TransformListener* tf_listener = bm->getTfListener();
 		tf_listener->lookupTransform("odom", "base_link", ros::Time(0),
@@ -324,8 +423,8 @@ public:
 		boost::posix_time::ptime prev =
 				boost::posix_time::second_clock::local_time();
 		boost::posix_time::ptime curr;
-		bm->doAngleMotion(goalTheta, msg->timeout, success, polygons_ptr,
-				num_polygons);
+		bm->doAngleMotion(goalTheta, msg->timeout, success, preempted,  polygons_ptr,
+				num_polygons, DISTANCE_ANGLE);
 
 		if (success) {
 			tf_listener->lookupTransform("odom", "base_link", ros::Time(0),
@@ -342,16 +441,18 @@ public:
 					msg->timeout == 0 ?
 							0 :
 							msg->timeout - (curr - prev).total_milliseconds(),
-					success, polygons_ptr, num_polygons);
+					success, preempted,polygons_ptr, num_polygons, DISTANCE_ANGLE);
 		}
 
-		if (success)
-			as.setSucceeded(result);
+		if(!preempted){
+			result.success = success;
+			as->setSucceeded(result);
+		}
 	}
 private:
 	std::string action_name;
 	ros::NodeHandle nh;
-	actionlib::SimpleActionServer<common::GoalDistAngleAction> as;
+	actionlib::SimpleActionServer<common::GoalDistAngleAction> * as;
 	common::GoalDistAngleResult result;
 	BasicMotion * bm;
 	EnvironmentUtil envu;
@@ -361,54 +462,59 @@ private:
 
 class GoalPoseAction {
 public:
-	GoalPoseAction(std::string name, BasicMotion * bm) :
-			as(nh, name,
+	GoalPoseAction(std::string name, BasicMotion * bm) : action_name(name), bm(bm) {
+		as = new actionlib::SimpleActionServer<common::GoalPoseAction>(nh, name,
 					boost::bind(&GoalPoseAction::executeCallback, this, _1),
-					false), action_name(name), bm(bm) {
-		as.start();
+					false);
+		as->start();
+		bm->aspo = as;
 		envu.initRosConnection(&nh);
+		polygons_ptr = 0;
 	}
 	void executeCallback(const common::GoalPoseGoalConstPtr msg) {
 		std::cout << "New Goal Dist angle:" << msg->pose.x << "," << msg->pose.y
 				<< "," << msg->pose.theta << std::endl;
-		bool success;
+		bool success, preempted;
 
-		biorobotics::Polygon * polygons_ptr;
-		int num_polygons = 0;
 		polygons_ptr = envu.convertGeometryMsgToPolygons(envu.call(),
 				polygons_ptr, &num_polygons);
 
 		bm->doGoalMotion(msg->pose.x, msg->pose.y, msg->pose.theta, true, false,
-				false, msg->timeout, success, polygons_ptr, num_polygons);
-		if (success)
-			as.setSucceeded(result);
+				false, msg->timeout, success, preempted, polygons_ptr, num_polygons, POSE);
+
+		if(!preempted){
+			result.success = success;
+			as->setSucceeded(result);
+		}
 	}
 private:
 	std::string action_name;
 	ros::NodeHandle nh;
-	actionlib::SimpleActionServer<common::GoalPoseAction> as;
+	actionlib::SimpleActionServer<common::GoalPoseAction> * as;
 	common::GoalPoseResult result;
 	BasicMotion * bm;
 	EnvironmentUtil envu;
+	biorobotics::Polygon * polygons_ptr;
+	int num_polygons;
 };
 
 class GoalPathAction {
 public:
-	GoalPathAction(std::string name, BasicMotion * bm) :
-			as(nh, name,
+	GoalPathAction(std::string name, BasicMotion * bm) : action_name(name), bm(bm) {
+		as = new actionlib::SimpleActionServer<common::GoalPathAction>(nh, name,
 					boost::bind(&GoalPathAction::executeCallback, this, _1),
-					false), action_name(name), bm(bm) {
-		as.start();
+					false);
+		as->start();
+		bm->aspa = as;
 		envu.initRosConnection(&nh);
+		polygons_ptr = 0;
 	}
 	void executeCallback(const common::GoalPathGoalConstPtr msg) {
 		std::cout << "New Goal Patn:" << std::endl;
 		nav_msgs::Path path = msg->path;
 		int indexCurrPath = 0;
-		bool success;
+		bool success, preempted;
 
-		biorobotics::Polygon * polygons_ptr;
-		int num_polygons = 0;
 		polygons_ptr = envu.convertGeometryMsgToPolygons(envu.call(),
 				polygons_ptr, &num_polygons);
 
@@ -425,7 +531,7 @@ public:
 						timeout == 0 ?
 								0 :
 								timeout - (curr - prev).total_milliseconds(),
-						success, polygons_ptr, num_polygons);
+						success, preempted, polygons_ptr, num_polygons, PATH);
 				if (success)
 					indexCurrPath++;
 				rate.sleep();
@@ -434,16 +540,20 @@ public:
 					&& ((curr - prev).total_milliseconds() < timeout
 							|| timeout == 0) && success);
 		}
-		if (success)
-			as.setSucceeded(result);
+		if(!preempted){
+			result.success = success;
+			as->setSucceeded(result);
+		}
 	}
 private:
 	std::string action_name;
 	ros::NodeHandle nh;
-	actionlib::SimpleActionServer<common::GoalPathAction> as;
+	actionlib::SimpleActionServer<common::GoalPathAction> * as;
 	common::GoalPathResult result;
 	BasicMotion * bm;
 	EnvironmentUtil envu;
+	biorobotics::Polygon * polygons_ptr;
+	int num_polygons;
 };
 
 int main(int argc, char ** argv) {
@@ -459,5 +569,9 @@ int main(int argc, char ** argv) {
 	GoalPoseAction goalPoseAction("goal_pose_action", &basicMotion);
 	GoalPathAction goalPathAction("goal_path_action", &basicMotion);
 
-	ros::spin();
+	ros::Rate rate(30);
+	while(ros::ok()){
+		rate.sleep();
+		ros::spinOnce();
+	}
 }
