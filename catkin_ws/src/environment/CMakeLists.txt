@@ -9,6 +9,9 @@ find_package(catkin REQUIRED COMPONENTS
   common
 )
 
+find_package(CGAL QUIET COMPONENTS Core )
+SET(CMAKE_CXX_FLAGS "-frounding-math -std=c++11")
+
 catkin_package(
         CATKIN_DEPENDS std_msgs
 )
@@ -19,4 +22,4 @@ include_directories(
 )
 
 add_executable(environment src/environment.cpp)
-target_link_libraries(environment ${catkin_LIBRARIES})
+target_link_libraries(environment ${catkin_LIBRARIES} ${CGAL_LIBRARY} ${GMP_LIBRARIES})

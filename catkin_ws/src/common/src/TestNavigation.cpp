@@ -15,12 +15,12 @@ int main(int argc, char ** argv){
 	float angle = atof(argv[2]);
 
 	bool success;
-	/*nu.asyncMoveDist(3.00, true);
-	success = nu.syncMoveDist(-3.0, true, 1000);*/
+	//nu.asyncMoveDist(3.00, true);
+	//success = nu.syncMoveDist(-3.0, true, 8000);
 	//nu.asyncMoveDistAngle(dis, angle);
-	success = nu.syncMoveDistAngle(dis, angle, 6000);
-	/*nu.asyncMovePose(2.0, 2.0, 1.5708);
-	success = nu.syncMovePose(0.0, 0.0, 1.5708, 6000);*/
+	//success = nu.syncMoveDistAngle(-dis, -angle, 6000);
+	nu.asyncMovePose(0.0, 0.0, 1.5708);
+	success = nu.syncMovePose(0.0, 0.0, 1.5708, 6000);
 	std::cout << "success:" << success << std::endl;
 
 	return 1;

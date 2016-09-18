@@ -8,6 +8,30 @@
 #ifndef TRIANGULATEVERTEX_H_
 #define TRIANGULATEVERTEX_H_
 
+#include <vector>
+#include <list>
+
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+#include <CGAL/Regular_triangulation_euclidean_traits_2.h>
+#include <CGAL/Regular_triangulation_filtered_traits_2.h>
+#include <CGAL/Regular_triangulation_2.h>
+
+#include <CGAL/Partition_traits_2.h>
+#include <CGAL/partition_2.h>
+
+typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
+typedef CGAL::Regular_triangulation_filtered_traits_2<K> Traits;
+typedef CGAL::Regular_triangulation_2<Traits> Regular_triangulation;
+
+typedef CGAL::Partition_traits_2<K> Par_Traits;
+typedef CGAL::Is_convex_2<Traits> Is_convex_2;
+typedef Par_Traits::Point_2 Point_2;
+typedef Par_Traits::Polygon_2 Polygon_2;
+typedef std::list<Polygon_2> Polygon_list;
+
+typedef Polygon_2::Vertex_iterator Polygon_2_Vertex_iterator;
+typedef Regular_triangulation::Finite_faces_iterator Finite_faces_iterator;
+
 #include "definition.h"
 #include "utilSimulator.h"
 
@@ -21,32 +45,23 @@ std::vector<biorobotics::Triangle> traingulate(
 	float hight = 0.00000000;
 	int ind1;
 	int ind2;
-	int ind3;
-	int ind4;
-	int indexInit = 0;
+	
 	for (unsigned int i = 0; i < polygons.size(); i++) {
 		if (polygons[i].num_vertex >= 3) {
-			if (polygons[i].objectType != WALL) {
-				for (unsigned int j = 0; j < polygons[i].num_vertex; j++) {
-					float det = getDeterminant(polygons[i].vertex[indexInit],
-							polygons[i].vertex[indexInit + 1],
-							polygons[i].vertex[indexInit + 2]);
-					if (det >= 0) {
-						ind3 = indexInit + 1;
-						ind4 = indexInit + 2;
-						break;
-					} else
-						indexInit++;
-				}
+
+			Polygon_2 polygon;
+			Polygon_list partition_polys;
+			Par_Traits partition_traits;
+
+			if (polygons[i].objectType != WALL) 
 				hight = hightObs;
-			} else if (polygons[i].objectType == WALL) {
-				indexInit = 0;
-				ind3 = indexInit + 1;
-				ind4 = indexInit + 2;
+			else if (polygons[i].objectType == WALL)
 				hight = hightWalls;
-			}
 
 			for (unsigned int j = 0; j < polygons[i].num_vertex; j++) {
+
+				polygon.push_back(
+					Point_2(polygons[i].vertex[j].x, polygons[i].vertex[j].y));
 
 				if (j + 1 < polygons[i].num_vertex) {
 					ind1 = j;
@@ -62,40 +77,6 @@ std::vector<biorobotics::Triangle> traingulate(
 				Vertex3 vertex21 = Vertex3::Zero();
 				Vertex3 vertex22 = Vertex3::Zero();
 				Vertex3 vertex23 = Vertex3::Zero();
-
-				if (j + 2 < polygons[i].num_vertex) {
-					if (ind3 >= polygons[i].num_vertex)
-						ind3 = 0;
-					if (ind4 >= polygons[i].num_vertex)
-						ind4 = 0;
-
-					vertex11.x = polygons[i].vertex[indexInit].x;
-					vertex11.y = polygons[i].vertex[indexInit].y;
-					vertex11.z = 0.0;
-					vertex12.x = polygons[i].vertex[ind3].x;
-					vertex12.y = polygons[i].vertex[ind3].y;
-					vertex12.z = 0.0;
-					vertex13.x = polygons[i].vertex[ind4].x;
-					vertex13.y = polygons[i].vertex[ind4].y;
-					vertex13.z = 0.0;
-
-					vertex21.x = polygons[i].vertex[indexInit].x;
-					vertex21.y = polygons[i].vertex[indexInit].y;
-					vertex21.z = hight;
-					vertex22.x = polygons[i].vertex[ind3].x;
-					vertex22.y = polygons[i].vertex[ind3++].y;
-					vertex22.z = hight;
-					vertex23.x = polygons[i].vertex[ind4].x;
-					vertex23.y = polygons[i].vertex[ind4++].y;
-					vertex23.z = hight;
-
-					out.push_back(
-							biorobotics::Triangle(vertex11, vertex12, vertex13,
-									polygons[i].objectType));
-					out.push_back(
-							biorobotics::Triangle(vertex21, vertex22, vertex23,
-									polygons[i].objectType));
-				}
 
 				vertex11.x = polygons[i].vertex[ind1].x;
 				vertex11.y = polygons[i].vertex[ind1].y;
@@ -123,6 +104,68 @@ std::vector<biorobotics::Triangle> traingulate(
 				out.push_back(
 						biorobotics::Triangle(vertex21, vertex22, vertex23,
 								polygons[i].objectType));
+			}
+
+			CGAL::optimal_convex_partition_2(polygon.vertices_begin(),
+				polygon.vertices_end(), std::back_inserter(partition_polys),
+				partition_traits);
+
+			std::list<Polygon_2>::const_iterator poly_it;
+			for (poly_it = partition_polys.begin();
+				poly_it != partition_polys.end(); poly_it++) {
+				std::vector<Regular_triangulation::Weighted_point> wpoints;
+
+				for (Polygon_2_Vertex_iterator ver_it = poly_it->vertices_begin();
+						ver_it != poly_it->vertices_end(); ver_it++) {
+					Regular_triangulation::Weighted_point wp;
+					wp = Regular_triangulation::Weighted_point(ver_it->x(),
+							ver_it->y());
+					wpoints.push_back(wp);
+				}
+				Regular_triangulation rt(wpoints.begin(), wpoints.end());
+				rt.is_valid();
+
+				for (Finite_faces_iterator it = rt.finite_faces_begin();
+						it != rt.finite_faces_end(); it++) {
+
+					Vertex3 vertex11 = Vertex3::Zero();
+					Vertex3 vertex12 = Vertex3::Zero();
+					Vertex3 vertex13 = Vertex3::Zero();
+					Vertex3 vertex21 = Vertex3::Zero();
+					Vertex3 vertex22 = Vertex3::Zero();
+					Vertex3 vertex23 = Vertex3::Zero();
+
+					vertex13.x = rt.triangle(it)[0].x();
+					vertex13.y = rt.triangle(it)[0].y();
+					vertex13.z = 0.0;
+
+					vertex12.x = rt.triangle(it)[1].x();
+					vertex12.y = rt.triangle(it)[1].y();
+					vertex12.z = 0.0;
+
+					vertex11.x = rt.triangle(it)[2].x();
+					vertex11.y = rt.triangle(it)[2].y();
+					vertex11.z = 0.0;
+
+					vertex21.x = rt.triangle(it)[0].x();
+					vertex21.y = rt.triangle(it)[0].y();
+					vertex21.z = hight;
+
+					vertex22.x = rt.triangle(it)[1].x();
+					vertex22.y = rt.triangle(it)[1].y();
+					vertex22.z = hight;
+
+					vertex23.x = rt.triangle(it)[2].x();
+					vertex23.y = rt.triangle(it)[2].y();
+					vertex23.z = hight;
+
+					out.push_back(
+							biorobotics::Triangle(vertex11, vertex12, vertex13,
+									polygons[i].objectType));
+					out.push_back(
+							biorobotics::Triangle(vertex21, vertex22, vertex23,
+									polygons[i].objectType));
+				}
 			}
 		}
 	}
