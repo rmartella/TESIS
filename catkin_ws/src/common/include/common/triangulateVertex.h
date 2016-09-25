@@ -50,8 +50,9 @@ std::vector<biorobotics::Triangle> traingulate(
 		if (polygons[i].num_vertex >= 3) {
 
 			Polygon_2 polygon;
-			Polygon_list partition_polys;
-			Par_Traits partition_traits;
+			Polygon_list y_monotone_partition_polys;
+			Polygon_list convex_partition_polys;
+			Par_Traits y_monotone_partition_traits;
 
 			if (polygons[i].objectType != WALL) 
 				hight = hightObs;
@@ -106,13 +107,19 @@ std::vector<biorobotics::Triangle> traingulate(
 								polygons[i].objectType));
 			}
 
-			CGAL::optimal_convex_partition_2(polygon.vertices_begin(),
-				polygon.vertices_end(), std::back_inserter(partition_polys),
-				partition_traits);
+			CGAL::y_monotone_partition_2(polygon.vertices_begin(),
+				polygon.vertices_end(),
+				std::back_inserter(y_monotone_partition_polys),
+				y_monotone_partition_traits);
+
+			CGAL::approx_convex_partition_2(polygon.vertices_begin(),
+				polygon.vertices_end(),
+				std::back_inserter(convex_partition_polys),
+				y_monotone_partition_traits);
 
 			std::list<Polygon_2>::const_iterator poly_it;
-			for (poly_it = partition_polys.begin();
-				poly_it != partition_polys.end(); poly_it++) {
+			for (poly_it = convex_partition_polys.begin();
+				poly_it != convex_partition_polys.end(); poly_it++) {
 				std::vector<Regular_triangulation::Weighted_point> wpoints;
 
 				for (Polygon_2_Vertex_iterator ver_it = poly_it->vertices_begin();
