@@ -21,7 +21,7 @@
     <node name="basic_motion" pkg="navigation" type="basic_motion" output="screen"/>
 
     <node name="map_server" pkg="map_server" type="map_server" output="screen" 
-                     args="$(find knowledge)/occupancy_grids/biorobotica_simul.yaml"/>
+                     args="$(find knowledge)/occupancy_grids/bioroboticsmap_simul.yaml"/>
 
     <node name="path_planning" pkg="path_planning" type="path_planning" output="screen">
     	<rosparam file="$(find launch)/launch/local_costmap_params.yaml" command="load" />

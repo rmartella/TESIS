@@ -31,6 +31,12 @@ def callbackStop(msg):
     frontSpeed = 0
     newSpeedData = True
 
+def callbackPose(msg):
+    global robotPos
+    robotPos[0] = msg.data[0]
+    robotPos[1] = msg.data[1]
+    robotPos[2] = msg.data[2]
+
 def callbackSpeeds(msg):
     global leftSpeed
     global rightSpeed
@@ -147,6 +153,7 @@ def main():
     subStop = rospy.Subscriber("robot_state/stop", Empty, callbackStop)
     subSpeeds = rospy.Subscriber("/hardware/mobile_base/speeds", Float32MultiArray, callbackSpeeds)
     subCmdVel = rospy.Subscriber("/hardware/mobile_base/cmd_vel", Twist, callbackCmdVel)
+    subSetPos = rospy.Subscriber("/hardware/mobile_base/set_pose", Float32MultiArray, callbackPose)
 
     br = tf.TransformBroadcaster()
     rate = rospy.Rate(30)
@@ -157,6 +164,7 @@ def main():
     global frontSpeed
     global rearSpeed
     global newSpeedData
+    global robotPos
     leftSpeed = 0
     rightSpeed = 0
     frontSpeed = 0

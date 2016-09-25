@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
   actionlib_msgs
   geometry_msgs
+  sensor_msgs
 )
 
 find_package(Eigen REQUIRED)
@@ -25,15 +26,12 @@ add_action_files(
         GoalDistAngle.action
         GoalPath.action
         GoalPose.action
+        GoalPotentialFields.action
 )
 
 add_service_files(
    FILES
    Environment.srv
-   GoalDistAngle.srv
-   GoalDist.srv
-   GoalPose.srv
-   GoalPath.srv
    PathPlanning.srv
    MotionPlannerXYA.srv
    MotionPlannerLoc.srv
@@ -45,11 +43,12 @@ generate_messages(
     std_msgs
     geometry_msgs
     nav_msgs
+    sensor_msgs
 )
 
 catkin_package(
         DEPENDS Eigen
-        CATKIN_DEPENDS message_runtime actionlib_msgs nav_msgs std_msgs tf geometry_msgs
+        CATKIN_DEPENDS message_runtime actionlib_msgs nav_msgs std_msgs tf geometry_msgs sensor_msgs
         INCLUDE_DIRS include/
         LIBRARIES EnvironmentUtil NavigationUtil PointClickSubscriber
 )
@@ -79,3 +78,7 @@ add_dependencies(testNavigation common_gencpp)
 add_library(PathPlanningUtil src/PathPlanningUtil.cpp)
 target_link_libraries(PathPlanningUtil ${catkin_LIBRARIES} NavigationUtil)
 add_dependencies(PathPlanningUtil common_gencpp)
+
+add_library(LaserScanUtil src/LaserScanUtil.cpp)
+target_link_libraries(LaserScanUtil ${catkin_LIBRARIES})
+add_dependencies(LaserScanUtil common_gencpp)

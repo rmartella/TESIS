@@ -150,6 +150,31 @@ typedef struct _Circle {
 	}
 } Circle;
 
+typedef struct _LaserScan{
+	_LaserScan(){
+	}
+	_LaserScan(float angle_min, float angle_max, float angle_increment, float range_min, float range_max, 
+		float num_scans, float * ranges){
+		this->angle_min = angle_min;
+		this->angle_max = angle_max;
+		this->angle_increment = angle_increment;
+		this->range_min = range_min;
+		this->range_max = range_max;
+		this->num_scans = num_scans;
+		this->ranges = ranges;
+	}
+	~_LaserScan(){
+		//delete []ranges;
+	}
+	float angle_min;
+	float angle_max;
+	float angle_increment;
+	float range_min;
+	float range_max;
+	float num_scans;
+	float * ranges = 0;
+} LaserScan;
+
 }
 
 #endif /* DEFINITION_H_ */

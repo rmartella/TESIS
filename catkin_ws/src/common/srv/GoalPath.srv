@@ -1,4 +1,0 @@
-nav_msgs/Path path
-int32 timeout
----
-bool success

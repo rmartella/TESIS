@@ -47,8 +47,10 @@ protected:
 	tf::TransformListener* tf_listener;
 	ros::Publisher pubSpeeds;
 	ros::Publisher pubCmdVel;
+	ros::Publisher pubPose;
 	LowLevelControl control;
 	ros::Publisher pub;
+	std_msgs::Float32MultiArray pose;
 
 };
 
@@ -57,6 +59,8 @@ void BasicMotion::initRosConnection(ros::NodeHandle *n) {
 			"/hardware/mobile_base/speeds", 1);
 	pubCmdVel = n->advertise<geometry_msgs::Twist>(
 			"/hardware/mobile_base/cmd_vel", 1);
+	pubPose = n->advertise<std_msgs::Float32MultiArray>(
+			"/hardware/mobile_base/set_pose", 1);
 	tf_listener = new tf::TransformListener();
 	tf_listener->waitForTransform("map", "base_link", ros::Time(0),
 			ros::Duration(5.0));
@@ -64,6 +68,10 @@ void BasicMotion::initRosConnection(ros::NodeHandle *n) {
 			ros::Duration(5.0));
 	pub = n->advertise<visualization_msgs::Marker>("collision_markers", 1);
 	control.SetRobotParams(0.48);
+
+	pose.data.push_back(0);
+	pose.data.push_back(0);
+	pose.data.push_back(0);
 }
 
 void BasicMotion::doGoalMotion(float goalX, float goalY, float goalTheta,
@@ -90,31 +98,28 @@ void BasicMotion::doGoalMotion(float goalX, float goalY, float goalTheta,
 			&& ((curr - prev).total_milliseconds() < timeout || timeout == 0)
 			&& !motionFinished && !preempted) {
 
-		if (!correctFinalAngle) {
-			tf_listener->lookupTransform("odom", "base_link", ros::Time(0),
+		tf_listener->lookupTransform("odom", "base_link", ros::Time(0),
 					transform);
-			currentX = transform.getOrigin().x();
-			currentY = transform.getOrigin().y();
-			currentTheta = tf::getYaw(transform.getRotation());
-			bool testCollision = testAABBWithPolygons(currentX, currentY,
-					currentTheta, 0.48, 0.48, polygons, num_polygons, &pub);
-			if (testCollision) {
-				std::cout << " ----- testCollision -----" << testCollision
-						<< std::endl;
-				if(moveBackwards){
-					speeds.data[0] = 0.3;
-					speeds.data[1] = 0.3;
-				}
-				else{
-					speeds.data[0] = -0.3;
-					speeds.data[1] = -0.3;
-				}
+		currentX = transform.getOrigin().x();
+		currentY = transform.getOrigin().y();
+		currentTheta = tf::getYaw(transform.getRotation());
 
-				pubSpeeds.publish(speeds);
-				boost::this_thread::sleep(boost::posix_time::milliseconds(1000));
-				motionFinished = false;
-				break;
-			}
+		bool testCollision = testAABBWithPolygons(currentX, currentY,
+					currentTheta, 0.44, 0.44, polygons, num_polygons, &pub);
+		if (testCollision) {
+			std::cout << " ----- testCollision -----" << testCollision
+					<< std::endl;
+			pubPose.publish(pose);
+			motionFinished = false;
+			break;
+		}
+
+		pose.data[0] = currentX;
+		pose.data[1] = currentY;
+		pose.data[2] = currentTheta;
+
+		if (!correctFinalAngle) {
+			
 			float errorX = goalX - currentX;
 			float errorY = goalY - currentY;
 			float error = sqrt(pow(errorX, 2) + pow(errorY, 2));
@@ -141,23 +146,7 @@ void BasicMotion::doGoalMotion(float goalX, float goalY, float goalTheta,
 			}
 		}
 		if (correctFinalAngle) {
-			tf_listener->lookupTransform("odom", "base_link", ros::Time(0),
-					transform);
-			currentX = transform.getOrigin().x();
-			currentY = transform.getOrigin().y();
-			currentTheta = tf::getYaw(transform.getRotation());
-			bool testCollision = testAABBWithPolygons(currentX, currentY,
-					currentTheta, 0.48, 0.48, polygons, num_polygons, &pub);
-			if (testCollision) {
-				std::cout << " ----- testCollision -----" << testCollision
-						<< std::endl;
-				speeds.data[0] = -0.3;
-				speeds.data[1] = -0.3;
-				pubSpeeds.publish(speeds);
-				boost::this_thread::sleep(boost::posix_time::milliseconds(1000));
-				motionFinished = false;
-				break;
-			}
+			
 			errorAngle = goalTheta - currentTheta;
 			if (errorAngle > M_PI)
 				errorAngle -= 2 * M_PI;
@@ -245,17 +234,18 @@ void BasicMotion::doAngleMotion(float goalTheta, float timeout, bool& success, b
 		currentY = transform.getOrigin().y();
 		currentTheta = tf::getYaw(transform.getRotation());
 		bool testCollision = testAABBWithPolygons(currentX, currentY,
-				currentTheta, 0.48, 0.48, polygons, num_polygons, &pub);
+				currentTheta, 0.44, 0.44, polygons, num_polygons, &pub);
 		if (testCollision) {
 			std::cout << " ----- testCollision -----" << testCollision
 					<< std::endl;
-			speeds.data[0] = -0.3;
-			speeds.data[1] = -0.3;
-			pubSpeeds.publish(speeds);
-			boost::this_thread::sleep(boost::posix_time::milliseconds(1000));
+			pubPose.publish(pose);
 			motionFinished = false;
 			break;
 		}
+		pose.data[0] = currentX;
+		pose.data[1] = currentY;
+		pose.data[2] = currentTheta;
+
 		errorAngle = goalTheta - currentTheta;
 		if (errorAngle > M_PI)
 			errorAngle -= 2 * M_PI;
@@ -359,8 +349,9 @@ public:
 			goalTheta = currentTheta;
 		}
 
-		polygons_ptr = envu.convertGeometryMsgToPolygons(envu.call(),
-				polygons_ptr, &num_polygons);
+		if(polygons_ptr == 0)
+			polygons_ptr = envu.convertGeometryMsgToPolygons(envu.call(),
+					polygons_ptr, &num_polygons);
 
 		bm->doGoalMotion(goalX, goalY, goalTheta, false,
 				dist < 0 ? true : false, moveLateral, timeout, success, preempted,
@@ -417,8 +408,9 @@ public:
 		else if (goalTheta < -2 * M_PI)
 			goalTheta += 4 * M_PI;
 
-		polygons_ptr = envu.convertGeometryMsgToPolygons(envu.call(),
-				polygons_ptr, &num_polygons);
+		if(polygons_ptr == 0)
+			polygons_ptr = envu.convertGeometryMsgToPolygons(envu.call(),
+					polygons_ptr, &num_polygons);
 
 		boost::posix_time::ptime prev =
 				boost::posix_time::second_clock::local_time();
@@ -476,8 +468,9 @@ public:
 				<< "," << msg->pose.theta << std::endl;
 		bool success, preempted;
 
-		polygons_ptr = envu.convertGeometryMsgToPolygons(envu.call(),
-				polygons_ptr, &num_polygons);
+		if(polygons_ptr == 0)
+			polygons_ptr = envu.convertGeometryMsgToPolygons(envu.call(),
+					polygons_ptr, &num_polygons);
 
 		bm->doGoalMotion(msg->pose.x, msg->pose.y, msg->pose.theta, true, false,
 				false, msg->timeout, success, preempted, polygons_ptr, num_polygons, POSE);
@@ -515,8 +508,9 @@ public:
 		int indexCurrPath = 0;
 		bool success, preempted;
 
-		polygons_ptr = envu.convertGeometryMsgToPolygons(envu.call(),
-				polygons_ptr, &num_polygons);
+		if(polygons_ptr == 0)
+			polygons_ptr = envu.convertGeometryMsgToPolygons(envu.call(),
+					polygons_ptr, &num_polygons);
 
 		if (path.poses.size() > 0) {
 			float timeout = msg->timeout;

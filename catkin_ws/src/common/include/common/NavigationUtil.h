@@ -4,6 +4,7 @@
 #include "common/GoalDistAngleAction.h"
 #include "common/GoalPathAction.h"
 #include "common/GoalPoseAction.h"
+#include "common/GoalPotentialFieldsAction.h"
 
 #include "geometry_msgs/Pose2D.h"
 
@@ -24,9 +25,12 @@ public:
 	bool syncMovePose(float goalX, float goalY, float goalTheta, int timeout);
 	void asyncMovePath(nav_msgs::Path path);
 	bool syncMovePath(nav_msgs::Path path, int timeout);
+	void asyncPotentialFields(float goalX, float goalY);
+	bool syncPotentialFields(float goalX, float goalY, int timeout);
 protected:
 	actionlib::SimpleActionClient<common::GoalDistAction> * acMovDis;
 	actionlib::SimpleActionClient<common::GoalDistAngleAction> * acMovDisAngle;
 	actionlib::SimpleActionClient<common::GoalPoseAction> * acMovPose;
 	actionlib::SimpleActionClient<common::GoalPathAction> * acMovPath;
+	actionlib::SimpleActionClient<common::GoalPotentialFieldsAction> * acMovPotFields;
 };

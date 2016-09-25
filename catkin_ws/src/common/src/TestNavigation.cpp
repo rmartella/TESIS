@@ -16,11 +16,13 @@ int main(int argc, char ** argv){
 
 	bool success;
 	//nu.asyncMoveDist(3.00, true);
-	//success = nu.syncMoveDist(-3.0, true, 8000);
+	//success = nu.syncMoveDist(3.0, false, 8000);
 	//nu.asyncMoveDistAngle(dis, angle);
 	//success = nu.syncMoveDistAngle(-dis, -angle, 6000);
-	nu.asyncMovePose(0.0, 0.0, 1.5708);
-	success = nu.syncMovePose(0.0, 0.0, 1.5708, 6000);
+	//nu.asyncMovePose(0.0, 0.0, 1.5708);
+	//success = nu.syncMovePose(0.0, 0.0, 1.5708, 6000);
+	nu.asyncPotentialFields(-2.5, 8.0);
+	success = nu.syncPotentialFields(-2.5, 8.0, 3000);
 	std::cout << "success:" << success << std::endl;
 
 	return 1;

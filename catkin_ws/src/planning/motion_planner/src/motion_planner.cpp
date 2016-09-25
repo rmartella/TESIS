@@ -98,11 +98,11 @@ int main(int argc, char ** argv){
 
 	bool success;
 	nav_msgs::Path path;
-	path = pathPlanningUtil.planPathSymbMapDjsk(0, 0, -3.95, -4, success);
-	//path = pathPlanningUtil.planPathGridMapDjsk(0.0, 0.0, -2.5, 9.57, success);
+	//path = pathPlanningUtil.planPathSymbMapDjsk(0, 0, -3.95, -4, success);
+	path = pathPlanningUtil.planPathGridMapDjsk(0.0, 0.0, -2.5, 9.57, success);
 	if(success){
-		//navigationUtil.asyncMovePath(path);
-		navigationUtil.syncMovePath(path, 5000);
+		navigationUtil.asyncMovePath(path);
+		//navigationUtil.syncMovePath(path, 5000);
 	}
 
 }

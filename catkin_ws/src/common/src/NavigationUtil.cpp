@@ -6,6 +6,7 @@ NavigationUtil::~NavigationUtil(){
 	delete acMovDisAngle;
 	delete acMovPose;
 	delete acMovPath;
+	delete acMovPotFields;
 }
 
 void NavigationUtil::initRosConnection(ros::NodeHandle * n){
@@ -13,6 +14,7 @@ void NavigationUtil::initRosConnection(ros::NodeHandle * n){
 	acMovDisAngle = new actionlib::SimpleActionClient<common::GoalDistAngleAction>("goal_dist_angle_action", true);
 	acMovPose = new actionlib::SimpleActionClient<common::GoalPoseAction>("goal_pose_action", true);
 	acMovPath = new actionlib::SimpleActionClient<common::GoalPathAction>("goal_path_action", true);
+	acMovPotFields = new actionlib::SimpleActionClient<common::GoalPotentialFieldsAction>("potential_fields_action", true);
 }
 
 void NavigationUtil::asyncMoveDist(float dist, bool moveLateral){
@@ -125,6 +127,34 @@ bool NavigationUtil::syncMovePath(nav_msgs::Path path, int timeout){
     actionlib::SimpleClientGoalState state = acMovPath->getState();
     if(state ==  actionlib::SimpleClientGoalState::SUCCEEDED)
     	return acMovPath->getResult()->success;
+    else
+    	return false;
+}
+
+void NavigationUtil::asyncPotentialFields(float goalX, float goalY){
+	std::cout << "Move to pose:" << goalX << "," << goalY << std::endl;
+	acMovPotFields->waitForServer();
+	common::GoalPotentialFieldsGoal msg;
+	msg.pose.x = goalX;
+	msg.pose.y = goalY;
+	msg.timeout = 0;
+	acMovPotFields->sendGoal(msg);
+}
+
+bool NavigationUtil::syncPotentialFields(float goalX, float goalY, int timeout){
+	std::cout << "Move to pose:" << goalX << "," << goalY << std::endl;
+	acMovPotFields->waitForServer();
+	common::GoalPotentialFieldsGoal msg;
+	msg.pose.x = goalX;
+	msg.pose.y = goalY;
+	msg.timeout = timeout;
+	acMovPotFields->sendGoal(msg);
+
+	bool finished_before_timeout = acMovPotFields->waitForResult(ros::Duration(0.0));
+
+    actionlib::SimpleClientGoalState state = acMovPotFields->getState();
+    if(state ==  actionlib::SimpleClientGoalState::SUCCEEDED)
+    	return acMovPotFields->getResult()->success;
     else
     	return false;
 }
