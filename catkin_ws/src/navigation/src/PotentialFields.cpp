@@ -34,7 +34,8 @@ Vertex2 PotentialFields::computeGradientRepulsionObject(Vertex2 position,
         x = position.x - obstaclePosition.x;
         y = position.y - obstaclePosition.y;
         scalar = 1 / module - 1 / dr;
-        scalar = (-etha * scalar * (1 / pow(module, 3)));
+        //scalar = (-etha * scalar * (1 / pow(module, 3)));
+        scalar = (scalar * (1 / pow(module, 3)));
         x = scalar * x;
         y = scalar * y;
         grad.x = x;
@@ -74,6 +75,8 @@ Vertex2 PotentialFields::computeRepulsionForzeWithSensors(Vertex2 position, floa
             totalForze.y = totalForze.y + forze.y;    
         }
     }
+    totalForze.x = -etha / laserScan->num_scans * totalForze.x;
+    totalForze.y = -etha / laserScan->num_scans * totalForze.y;
     return totalForze;
 }
 

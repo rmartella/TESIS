@@ -18,8 +18,13 @@
 #include <common/intersectionTest.h>
 #include "tf/transform_listener.h"
 
-float angle_min = -1.57;
+/*float angle_min = -1.57;
 float range_angle_sensor = 3.14;
+int num_sensors = 4000;
+float range_min = 0.0;
+float range_max = 8.0;*/
+float angle_min = -M_PI_2;
+float range_angle_sensor = M_PI;
 int num_sensors = 1000;
 float range_min = 0.0;
 float range_max = 8.0;
@@ -29,7 +34,7 @@ int main(int argc, char ** argv) {
 	ros::init(argc, argv, "lase_simul_scan");
 
 	ros::NodeHandle n;
-	ros::Rate rate(30);
+	ros::Rate rate(15);
 
 	ros::Publisher scan_pub = n.advertise<sensor_msgs::LaserScan>("scan", 1);
 
@@ -126,9 +131,9 @@ int main(int argc, char ** argv) {
 		}
 
 		scan_pub.publish(scan);
-
 		ros::spinOnce();
 		rate.sleep();
+		ros::spinOnce();
 	}
 
 }

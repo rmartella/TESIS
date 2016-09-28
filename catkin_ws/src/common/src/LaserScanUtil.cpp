@@ -24,13 +24,10 @@ void LaserScanUtil::executeCallback(sensor_msgs::LaserScan msg){
 	if(laserScan != nullptr)
 		delete laserScan;
 
-	std::vector<float> ranges;
-	ranges.reserve(num_scans);
-	float * ranges_ptr;
+	float * ranges_ptr = (float *) malloc(sizeof(float) * num_scans);
 
-	std::copy(std::begin(msg.ranges), std::end(msg.ranges), std::begin(ranges));
-
-	ranges_ptr = ranges.data();
+	for(int i = 0; i < num_scans; i++)
+		ranges_ptr[i] = msg.ranges[i];
 
 	laserScan = new biorobotics::LaserScan(msg.angle_min, msg.angle_max, msg.angle_increment, msg.range_min, msg.range_max, 
 		num_scans, ranges_ptr);

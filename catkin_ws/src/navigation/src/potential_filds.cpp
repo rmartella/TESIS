@@ -21,7 +21,7 @@ public:
 					false);
 		as->start();
 
-		algoPf = new PotentialFields(0.06, 0.5, 0.5, 20, 20);
+		algoPf = new PotentialFields(20, 1.2, 0.5, 20, 20);
 
 		laserUtil.initRosConnection(&nh);
 		navigationUtil.initRosConnection(&nh);
@@ -56,7 +56,7 @@ public:
 		goalTheta = msg->pose.theta;
 		timeout = msg->timeout;
 
-		ros::Rate rate(10);
+		ros::Rate rate(2);
 		
 		while(ros::ok() && ((curr - prev).total_milliseconds() < timeout || timeout == 0)){
 
@@ -78,7 +78,7 @@ public:
 			float errorX = goalX - robotTransform.getOrigin().x();
 			float errorY = goalY - robotTransform.getOrigin().y();
 			float error = sqrt(pow(errorX, 2) + pow(errorY, 2));
-			if (error < 0.035) {
+			if (error < 0.5) {
 				navigationUtil.asyncMoveDistAngle(0, 0);
 				success = true;
 				break;
@@ -112,7 +112,9 @@ public:
 	            float turn = angleTarget - tf::getYaw(robotTransform.getRotation());
 	            float advance = distance;
 
-	            navigationUtil.asyncMoveDistAngle(advance, turn);
+	            //navigationUtil.asyncMoveDistAngle(advance, turn);
+	            //navigationUtil.syncMoveDistAngle(advance, turn, 0);
+	            navigationUtil.asyncMovePose(nextposition.x, nextposition.y, turn);
 			}
 
 			rate.sleep();
