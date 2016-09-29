@@ -21,7 +21,7 @@ public:
 					false);
 		as->start();
 
-		algoPf = new PotentialFields(20, 1.2, 0.5, 20, 20);
+		algoPf = new PotentialFields(20, 0.37, 0.5, 20, 20);
 
 		laserUtil.initRosConnection(&nh);
 		navigationUtil.initRosConnection(&nh);
@@ -39,6 +39,7 @@ public:
 	~GoalPotentialFieldsAction(){
 		delete algoPf;
 		delete tf_listener;
+		delete as;
 	}
 	void executeCallback(const common::GoalPotentialFieldsGoalConstPtr msg) {
 		std::cout << "New Goal Dist angle:" << msg->pose.x << "," << msg->pose.y
@@ -56,15 +57,9 @@ public:
 		goalTheta = msg->pose.theta;
 		timeout = msg->timeout;
 
-		ros::Rate rate(2);
+		ros::Rate rate(10);
 		
 		while(ros::ok() && ((curr - prev).total_milliseconds() < timeout || timeout == 0)){
-
-			if (as->isPreemptRequested()){
-    			ROS_INFO("%s: Preempted", " Action PotentialFields");
-    			as->setPreempted();
-    			preempted = true;
-  			}
 
 			tf::StampedTransform laserTransform;
 			tf::StampedTransform robotTransform;
@@ -75,11 +70,19 @@ public:
 			Vertex2 robotPos(robotTransform.getOrigin().x(), robotTransform.getOrigin().y());
 			Vertex2 laserPos(laserTransform.getOrigin().x(), laserTransform.getOrigin().y());
 
+			if (as->isPreemptRequested()){
+    			ROS_INFO("%s: Preempted", " Action PotentialFields");
+    			as->setPreempted();
+    			preempted = true;
+    			navigationUtil.stopMotion();
+    			break;
+  			}
+
 			float errorX = goalX - robotTransform.getOrigin().x();
 			float errorY = goalY - robotTransform.getOrigin().y();
 			float error = sqrt(pow(errorX, 2) + pow(errorY, 2));
-			if (error < 0.5) {
-				navigationUtil.asyncMoveDistAngle(0, 0);
+			if (error < 0.1) {
+				navigationUtil.stopMotion();
 				success = true;
 				break;
 			}
@@ -99,7 +102,7 @@ public:
 	            nextposition.y = robotPos.y
 	                    - DELTA * totalForze.y / totalForze.norm();
 
-	             std::cout << "nextposition:" << nextposition.x << "," << nextposition.y << std::endl;
+	            //std::cout << "nextposition:" << nextposition.x << "," << nextposition.y << std::endl;
 	            float distance = robotPos.sub(nextposition).norm();
 
 	            float deltaX = nextposition.x - robotPos.x;
@@ -114,7 +117,7 @@ public:
 
 	            //navigationUtil.asyncMoveDistAngle(advance, turn);
 	            //navigationUtil.syncMoveDistAngle(advance, turn, 0);
-	            navigationUtil.asyncMovePose(nextposition.x, nextposition.y, turn);
+	            navigationUtil.asyncMovePose(nextposition.x, nextposition.y, 0, false);
 			}
 
 			rate.sleep();

@@ -207,7 +207,7 @@ bool intersectRayAABB(Vertex2 p1, Vertex2 p2, Vertex2 d, AABB a) {
 	if (!testSLABPlane(p1.y, d.y, a.miny, a.maxy, tmin, tmax))
 		return false;
 
-	if (fabs(d.x) < 0.01 || fabs(d.y) < 0.01) {
+	/*if (fabs(d.x) < 0.01 || fabs(d.y) < 0.01) {
 		if ((p1.x >= a.minx && p1.x <= a.maxx && p1.y >= a.miny
 				&& p1.y <= a.maxy)
 				|| (p2.x >= a.minx && p2.x <= a.maxx && p2.y >= a.miny
@@ -215,7 +215,7 @@ bool intersectRayAABB(Vertex2 p1, Vertex2 p2, Vertex2 d, AABB a) {
 			return true;
 		else
 			return false;
-	}
+	}*/
 
 	float q_x = p1.x + d.x * tmin;
 	float q_y = p1.y + d.y * tmin;
@@ -231,76 +231,13 @@ bool intersectRayAABB(Vertex2 p1, Vertex2 p2, Vertex2 d, AABB a) {
 		smaxy = p1.y;
 	}
 
-	if (q_x >= sminx && q_x <= smaxx && q_y >= sminy && q_y <= smaxy)
+	if (q_x >= sminx && q_x <= smaxx && q_y >= sminy && q_y <= smaxy){
+		std::cout << "Point Intersection:" <<  q_x << "," << q_y << "," << tmin << std::endl;
 		return true;
+	}
 
 	return false;
 }
-
-/*bool intersectRayAABB(Vertex2 p1, Vertex2 p2, Vertex2 d, AABB a) {
- float tmin = -FLT_MAX, tmax = FLT_MAX;
-
- if (fabs(d.x) < 0.01)
- return (p1.x >= a.minx && p1.x <= a.maxx);
-
- float ood = 1.0f / d.x;
- float t1 = (a.minx - p1.x) * ood;
- float t2 = (a.maxx - p1.x) * ood;
-
- if (t1 > t2) {
- float aux = t1;
- t1 = t2;
- t2 = aux;
- }
-
- if (t1 > tmin)
- tmin = t1;
- if (t2 < tmax)
- tmax = t2;
-
- if (tmin > tmax)
- return false;
-
- if (fabs(d.y) < 0.01)
- return (p1.y >= a.miny && p1.y <= a.maxy);
-
- ood = 1.0f / d.y;
- t1 = (a.miny - p1.y) * ood;
- t2 = (a.maxy - p1.y) * ood;
-
- if (t1 > t2) {
- float aux = t1;
- t1 = t2;
- t2 = aux;
- }
-
- if (t1 > tmin)
- tmin = t1;
- if (t2 < tmax)
- tmax = t2;
-
- if (tmin > tmax)
- return false;
-
- float q_x = p1.x + d.x * tmin;
- float q_y = p1.y + d.y * tmin;
-
- float sminx = p1.x, smaxx = p2.x, sminy = p1.y, smaxy = p2.y;
-
- if (sminx > smaxx) {
- sminx = p2.x;
- smaxx = p1.x;
- }
- if (sminy > smaxy) {
- sminy = p2.y;
- smaxy = p1.y;
- }
-
- if (q_x >= sminx && q_x <= smaxx && q_y >= sminy && q_y <= smaxy)
- return true;
-
- return false;
- }*/
 
 bool testAABBWithPolygons(float posx, float posy, float theta, float width,
 		float height, Polygon * polygons, int num_polygons,

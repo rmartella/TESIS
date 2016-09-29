@@ -119,7 +119,7 @@ Vertex2 PotentialFields::computeTotalForzeWithSensors(Vertex2 laserPosition, flo
             laserScan);
     totalForze.x = atractionForze.x + repulsionForze.x;
     totalForze.y = atractionForze.y + repulsionForze.y;
-    ROS_INFO("atractionForze Fa(%f,%f)", atractionForze.x, atractionForze.y);
-    ROS_INFO("repulsionForze Fr(%f,%f)", repulsionForze.x, repulsionForze.y);
+    //ROS_INFO("atractionForze Fa(%f,%f)", atractionForze.x, atractionForze.y);
+    //ROS_INFO("repulsionForze Fr(%f,%f)", repulsionForze.x, repulsionForze.y);
     return totalForze;
 }

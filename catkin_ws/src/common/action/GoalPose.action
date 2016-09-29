@@ -1,4 +1,5 @@
 geometry_msgs/Pose2D pose
+bool correctAngle
 int32 timeout
 ---
 bool success

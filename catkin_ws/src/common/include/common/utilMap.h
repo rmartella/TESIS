@@ -196,6 +196,7 @@ bool ** computeMapTopologic(std::vector<Polygon> polygons,
 						}
 						if (!isIntersectBool) {
 							adyacencies[offset[h] + j][offset[i] + k] = 1;
+							adyacencies[offset[i] + k][offset[h] + j] = 1;
 						}
 					}
 				}

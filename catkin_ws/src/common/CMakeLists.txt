@@ -27,14 +27,13 @@ add_action_files(
         GoalPath.action
         GoalPose.action
         GoalPotentialFields.action
+        MotionPlannerSym.action
 )
 
 add_service_files(
    FILES
    Environment.srv
    PathPlanning.srv
-   MotionPlannerXYA.srv
-   MotionPlannerLoc.srv
 )
 
 generate_messages(

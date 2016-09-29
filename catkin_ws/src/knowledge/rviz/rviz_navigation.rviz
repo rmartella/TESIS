@@ -9,7 +9,7 @@ Panels:
         - /LaserScan1
         - /Marker1/Namespaces1
       Splitter Ratio: 0.5
-    Tree Height: 359
+    Tree Height: 531
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -334,6 +334,14 @@ Visualization Manager:
         {}
       Queue Size: 100
       Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /loc_marker
+      Name: Marker
+      Namespaces:
+        locations_marker: true
+      Queue Size: 100
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -358,22 +366,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 5.98762
+      Distance: 11.5854
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -1.18447
-        Y: 5.17273
-        Z: -7.15256e-07
+        X: 0.443347
+        Y: 1.8892
+        Z: 1.66893e-06
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.614798
+      Pitch: 1.0698
       Target Frame: <Fixed Frame>
       Value: XYOrbit (rviz)
-      Yaw: 1.71224
+      Yaw: 4.60042
     Saved: ~
 Window Geometry:
   Displays:

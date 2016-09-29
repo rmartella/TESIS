@@ -16,6 +16,7 @@
 
 //#include "utilMap.h"
 #include "queue.h"
+ #include "definition.h"
 
 namespace biorobotics {
 
@@ -197,6 +198,37 @@ void sendToVizSegments(std::vector<biorobotics::Segment> segments, std::string n
 	}
 
 	marker_pub->publish(map_marker);
+}
+
+void sendToVizLocationMarker(std::map<std::string, std::vector<float> > locations, 
+		ros::Publisher * marker_pub){
+	visualization_msgs::Marker m;
+    m.ns = "locations_marker";
+    m.header.frame_id = "map";
+    m.type = visualization_msgs::Marker::CUBE_LIST;
+    m.action = visualization_msgs::Marker::ADD;
+    m.lifetime = ros::Duration();
+    m.pose.orientation.x = 0;
+    m.pose.orientation.y = 0;
+    m.pose.orientation.z = 0;
+    m.color.r = 0.0;
+    m.color.g = 1.0;
+    m.color.b = 1.0;
+    m.color.a = 1.0;
+    m.scale.x = 0.15;
+    m.scale.y = 0.15;
+    m.scale.z = 0.15;
+    int id = 0;
+    for(std::map<std::string, std::vector<float> >::iterator it=locations.begin(); 
+    		it != locations.end(); it++){
+        m.id = id;
+        geometry_msgs::Point p;
+        p.x = it->second[0];
+        p.y = it->second[1];
+        p.z = 0.075;
+        m.points.push_back(p);
+    }
+    marker_pub->publish(m);
 }
 
 }

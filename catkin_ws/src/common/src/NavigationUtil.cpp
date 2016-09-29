@@ -7,6 +7,7 @@ NavigationUtil::~NavigationUtil(){
 	delete acMovPose;
 	delete acMovPath;
 	delete acMovPotFields;
+	delete tf_listener;
 }
 
 void NavigationUtil::initRosConnection(ros::NodeHandle * n){
@@ -15,6 +16,21 @@ void NavigationUtil::initRosConnection(ros::NodeHandle * n){
 	acMovPose = new actionlib::SimpleActionClient<common::GoalPoseAction>("goal_pose_action", true);
 	acMovPath = new actionlib::SimpleActionClient<common::GoalPathAction>("goal_path_action", true);
 	acMovPotFields = new actionlib::SimpleActionClient<common::GoalPotentialFieldsAction>("potential_fields_action", true);
+
+	tf_listener = new tf::TransformListener();
+	tf_listener->waitForTransform("map", "base_link", ros::Time(0),
+		ros::Duration(5.0));
+	tf_listener->waitForTransform("odom", "base_link", ros::Time(0),
+		ros::Duration(5.0));
+}
+
+void NavigationUtil::getCurrPose(float &x, float &y, float &theta){
+	tf::StampedTransform robotTransform;
+	tf_listener->lookupTransform("odom", "base_link", ros::Time(0),
+		robotTransform);
+	x = robotTransform.getOrigin().x();
+	y = robotTransform.getOrigin().y();
+	theta = tf::getYaw(robotTransform.getRotation());
 }
 
 void NavigationUtil::asyncMoveDist(float dist, bool moveLateral){
@@ -75,24 +91,28 @@ bool NavigationUtil::syncMoveDistAngle(float dist, float theta, int timeout){
     	return false;
 }
 
-void NavigationUtil::asyncMovePose(float goalX, float goalY, float goalTheta){
+void NavigationUtil::asyncMovePose(float goalX, float goalY, float goalTheta, 
+		bool correctAngle){
 	std::cout << "Move to pose:" << goalX << "," << goalY << "," << goalTheta << std::endl;
 	acMovPose->waitForServer();
 	common::GoalPoseGoal msg;
 	msg.pose.x = goalX;
 	msg.pose.y = goalY;
 	msg.pose.theta = goalTheta;
+	msg.correctAngle = false;
 	msg.timeout = 0;
 	acMovPose->sendGoal(msg);
 }
 
-bool NavigationUtil::syncMovePose(float goalX, float goalY, float goalTheta, int timeout){
+bool NavigationUtil::syncMovePose(float goalX, float goalY, float goalTheta, 
+		bool correctAngle, int timeout){
 	std::cout << "Move to pose:" << goalX << "," << goalY << "," << goalTheta << std::endl;
 	acMovPose->waitForServer();
 	common::GoalPoseGoal msg;
 	msg.pose.x = goalX;
 	msg.pose.y = goalY;
 	msg.pose.theta = goalTheta;
+	msg.correctAngle = false;
 	msg.timeout = timeout;
 	acMovPose->sendGoal(msg);
 
@@ -157,4 +177,58 @@ bool NavigationUtil::syncPotentialFields(float goalX, float goalY, int timeout){
     	return acMovPotFields->getResult()->success;
     else
     	return false;
+}
+
+bool NavigationUtil::finishedCurrMotionDist(){
+	bool finished_before_timeout = acMovDis->waitForResult(ros::Duration(0.0));
+
+    actionlib::SimpleClientGoalState state = acMovDis->getState();
+    if(state ==  actionlib::SimpleClientGoalState::SUCCEEDED)
+    	return acMovDis->getResult()->success;
+    else
+    	return false;	
+}
+
+bool NavigationUtil::finishedCurrMotionDistAngle(){
+	actionlib::SimpleClientGoalState state = acMovDisAngle->getState();
+    if(state ==  actionlib::SimpleClientGoalState::SUCCEEDED){
+    	common::GoalDistAngleResultConstPtr result = acMovDisAngle->getResult();
+    	return result->success;
+    }
+    else
+    	return false;
+}
+
+bool NavigationUtil::finishedCurrMotionPose(){
+	bool finished_before_timeout = acMovPose->waitForResult(ros::Duration(0.0));
+
+    actionlib::SimpleClientGoalState state = acMovPose->getState();
+    if(state ==  actionlib::SimpleClientGoalState::SUCCEEDED)
+    	return acMovPose->getResult()->success;
+    else
+    	return false;
+}
+
+bool NavigationUtil::finishedCurrMotionPath(){
+	actionlib::SimpleClientGoalState state = acMovPath->getState();
+    if(state ==  actionlib::SimpleClientGoalState::SUCCEEDED)
+    	return acMovPath->getResult()->success;
+    else
+    	return false;
+}
+
+bool NavigationUtil::finishedCurrMotionPF(){
+	actionlib::SimpleClientGoalState state = acMovPotFields->getState();
+    if(state ==  actionlib::SimpleClientGoalState::SUCCEEDED)
+    	return acMovPotFields->getResult()->success;
+    else
+    	return false;
+}
+
+void NavigationUtil::stopMotion(){
+	acMovDis->cancelAllGoals();
+	acMovDisAngle->cancelAllGoals();
+	acMovPose->cancelAllGoals();
+	acMovPath->cancelAllGoals();
+	acMovPotFields->cancelAllGoals();
 }

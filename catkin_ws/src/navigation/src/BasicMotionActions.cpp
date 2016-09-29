@@ -199,7 +199,7 @@ void BasicMotion::doGoalMotion(float goalX, float goalY, float goalTheta,
 				break;
 		}
 	}
-	if (!motionFinished) {
+	if (!motionFinished || preempted) {
 		speeds.data[0] = 0;
 		speeds.data[1] = 0;
 		pubSpeeds.publish(speeds);
@@ -296,7 +296,7 @@ void BasicMotion::doAngleMotion(float goalTheta, float timeout, bool& success, b
 				break;
 		}
 	}
-	if (!motionFinished) {
+	if (!motionFinished || preempted) {
 		speeds.data[0] = 0;
 		speeds.data[1] = 0;
 		pubSpeeds.publish(speeds);
@@ -472,7 +472,7 @@ public:
 			polygons_ptr = envu.convertGeometryMsgToPolygons(envu.call(),
 					polygons_ptr, &num_polygons);
 
-		bm->doGoalMotion(msg->pose.x, msg->pose.y, msg->pose.theta, true, false,
+		bm->doGoalMotion(msg->pose.x, msg->pose.y, msg->pose.theta, msg->correctAngle, false,
 				false, msg->timeout, success, preempted, polygons_ptr, num_polygons, POSE);
 
 		if(!preempted){
