@@ -2,7 +2,7 @@
 
 void PathPlanningUtil::initRosConnection(ros::NodeHandle * n){
 	cltPathPlanningSymbMapDjsk =  n->serviceClient<common::PathPlanning>("path_planning_symb_djsk");
-	cltPathPlanningGridMapDjsk =  n->serviceClient<common::PathPlanning>("path_planning_grid_djsk");
+	cltPathPlanningGridMap =  n->serviceClient<common::PathPlanning>("path_planning_grid");
 }
 
 nav_msgs::Path PathPlanningUtil::planPathSymbMapDjsk(float startX, float startY, float goalX, float goalY, bool& success){
@@ -28,7 +28,7 @@ nav_msgs::Path PathPlanningUtil::planPathSymbMapDjsk(float startX, float startY,
 	return srv.response.path;
 }
 
-nav_msgs::Path PathPlanningUtil::planPathGridMapDjsk(float startX, float startY, float goalX, float goalY, bool& success){
+nav_msgs::Path PathPlanningUtil::planPathGridMap(float startX, float startY, float goalX, float goalY, bool& success){
 	common::PathPlanning srv;
 	geometry_msgs::Pose2D start;
 	geometry_msgs::Pose2D goal;
@@ -41,7 +41,7 @@ nav_msgs::Path PathPlanningUtil::planPathGridMapDjsk(float startX, float startY,
 	srv.request.start = start;
 	srv.request.goal = goal;
 
-	if(cltPathPlanningGridMapDjsk.call(srv)){
+	if(cltPathPlanningGridMap.call(srv)){
 		success = true;
 	}
 	else{

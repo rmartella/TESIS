@@ -83,7 +83,7 @@ bool pathPlanningWithSymbolicMapDjskCallback(common::PathPlanning::Request& req,
 	return true;
 }
 
-bool pathPlanningWithGridMapDjskCallback(common::PathPlanning::Request& req,
+bool pathPlanningWithGridMapCallback(common::PathPlanning::Request& req,
 		common::PathPlanning::Response& resp) {
 	geometry_msgs::PoseStamped start;
 	start.pose.position.x = req.start.x;
@@ -116,7 +116,7 @@ int main(int argc, char ** argv) {
 	ros::ServiceServer spp = n.advertiseService("path_planning_symb_djsk",
 			pathPlanningWithSymbolicMapDjskCallback);
 	ros::ServiceServer srvPathAStarFromAll = n.advertiseService(
-			"path_planning_grid_djsk", pathPlanningWithGridMapDjskCallback);
+			"path_planning_grid", pathPlanningWithGridMapCallback);
 	ros::Publisher map_marker_pub = n.advertise<visualization_msgs::Marker>("map_markers", 10);
 	ros::Publisher last_calc_path = n.advertise<nav_msgs::Path>(
 			"/path_planning/last_calc_path",

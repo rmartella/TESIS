@@ -28,6 +28,7 @@ add_action_files(
         GoalPose.action
         GoalPotentialFields.action
         MotionPlannerSym.action
+        MotionPlannerGrid.action
 )
 
 add_service_files(

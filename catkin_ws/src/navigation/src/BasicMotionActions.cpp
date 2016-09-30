@@ -464,7 +464,7 @@ public:
 		polygons_ptr = 0;
 	}
 	void executeCallback(const common::GoalPoseGoalConstPtr msg) {
-		std::cout << "New Goal Dist angle:" << msg->pose.x << "," << msg->pose.y
+		std::cout << "New Goal Pose:" << msg->pose.x << "," << msg->pose.y
 				<< "," << msg->pose.theta << std::endl;
 		bool success, preempted;
 

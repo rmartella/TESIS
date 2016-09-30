@@ -8,8 +8,8 @@ class PathPlanningUtil{
 public:
 	void initRosConnection(ros::NodeHandle * n);
 	nav_msgs::Path planPathSymbMapDjsk(float startX, float startY, float goalX, float goalY, bool& success);
-	nav_msgs::Path planPathGridMapDjsk(float startX, float startY, float goalX, float goalY, bool& success);
+	nav_msgs::Path planPathGridMap(float startX, float startY, float goalX, float goalY, bool& success);
 protected:
 	ros::ServiceClient cltPathPlanningSymbMapDjsk;
-	ros::ServiceClient cltPathPlanningGridMapDjsk;
+	ros::ServiceClient cltPathPlanningGridMap;
 };
