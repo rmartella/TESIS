@@ -325,6 +325,34 @@ Vertex2 * addVertexInitEndToVertexMap(Vertex2 init, Vertex2 end,
 	return vertexMap;
 }
 
+bool testToPathDirect(Vertex2 inicio, Vertex2 fin, Polygon * polygons, int num_polygons, float ratio) {
+ 	bool pathFree = true;
+
+ 	for (int i = 0; i < num_polygons && pathFree; i++) {
+ 		Polygon polygon = polygons[i];
+ 		for (int j = 0; j < polygon.num_vertex && pathFree; j++) {
+ 			Vertex2 vertex1 = polygon.vertex[j];
+ 			Vertex2 vertex2;
+	 		if (j < polygon.num_vertex)
+	 			vertex2 = polygon.vertex[j + 1];
+	 		else
+	 			vertex2 = polygon.vertex[1];
+	 		Segment segment(vertex1, vertex2);
+			Segment s1;
+			Segment s2;
+			computeParallelLines(segment, &s1, &s2, ratio);
+	 		//pathFree = !testSegmentIntersect(Segment(inicio, fin), Segment(vertex1, vertex2));
+	 		if (testSegmentIntersect(Segment(inicio, fin), Segment(vertex1, vertex2))
+					|| testSegmentIntersect(s1,
+							Segment(vertex1, vertex2))
+					|| testSegmentIntersect(s2,
+							Segment(vertex1, vertex2)))
+	 			pathFree = false;
+ 		}
+ 	}
+ 	return pathFree;
+}
+
 bool ** addNodesInitEndToMap(Vertex2 init, Vertex2 end, Polygon * polygons,
 		int sizePolygons, Vertex2 * vertexMap, bool ** adyacencies,
 		int * sizeAdjacenciesPtr, float ratio) {
@@ -401,35 +429,13 @@ bool ** addNodesInitEndToMap(Vertex2 init, Vertex2 end, Polygon * polygons,
 		}
 
 	}
+	bool pathFree = testToPathDirect(init, end, polygons, sizePolygons, ratio);
+	if (pathFree) {
+		adyacencies[*sizeAdjacenciesPtr - 1][*sizeAdjacenciesPtr - 2] = 1;
+	 	adyacencies[*sizeAdjacenciesPtr - 2][*sizeAdjacenciesPtr - 1] = 1;
+	}
 	return adyacencies;
-	/*bool pathFree = testToPathDirect(inicio, fin, num_polygons, polygons,
-	 grownPolygons);
-	 if (pathFree) {
-	 adyacencias[(num_polygons - 4) * NUM_MAX_VERTEX][0] = 1;
-	 adyacencias[0][(num_polygons - 4) * NUM_MAX_VERTEX] = 1;
-	 }*/
 }
-
-/*bool testToPathDirect(Vertex2 inicio, Vertex2 fin, Polygon * polygons,
- int num_polygons) {
- bool pathFree = true;
-
- for (int i = 0; i < num_polygons && pathFree; i++) {
- Polygon polygon = polygons[i];
- for (int j = 0; j < polygon.num_vertex && pathFree; j++) {
- if (j < polygon.num_vertex) {
- Vertex2 vertex1 = grownPolygons[i].vertex[j];
- Vertex2 vertex2 = grownPolygons[i].vertex[j + 1];
- pathFree = !isIntersect(inicio, fin, vertex1, vertex2);
- } else {
- Vertex2 vertex1 = grownPolygons[i].vertex[j];
- Vertex2 vertex2 = grownPolygons[i].vertex[1];
- pathFree = !isIntersect(inicio, fin, vertex1, vertex2);
- }
- }
- }
- return pathFree;
- }*/
 
 } /* namespace biorobotics */
 
