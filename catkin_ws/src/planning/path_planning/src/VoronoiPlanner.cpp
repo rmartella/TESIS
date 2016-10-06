@@ -172,7 +172,7 @@ bool VoronoiPlanner::computePlan(costmap_2d::Costmap2D* costmap_, DynamicVoronoi
 
 	// If goal not are in cell of the vornoi diagram, we have that best findPath of goal to voronoi diagram without have a cell occupancie
 	if (!voronoi_->isVoronoi(goal_x, goal_y)) {
-                res3 = computePath(&path3, goal_x, goal_y, start_x, start_y, voronoi_, 0,
+                res3 = computeUniformCostPath(&path3, goal_x, goal_y, start_x, start_y, voronoi_, 0,
                                 1);
                 std::cout << "computePath goal to VD " << res3 << std::endl;
                 goal_x = std::get < 0 > (path3[path3.size() - 1]);
@@ -184,7 +184,7 @@ bool VoronoiPlanner::computePlan(costmap_2d::Costmap2D* costmap_, DynamicVoronoi
         }
 
         if (!voronoi_->isVoronoi(start_x, start_y)) {
-                res1 = computePath(&path1, start_x, start_y, goal_x, goal_y, voronoi_, 0,
+                res1 = computeUniformCostPath(&path1, start_x, start_y, goal_x, goal_y, voronoi_, 0,
                                 1);
                 std::cout << "computePath start to VD " << res1 << std::endl;
                 start_x = std::get < 0 > (path1[path1.size() - 1]);
@@ -193,7 +193,8 @@ bool VoronoiPlanner::computePlan(costmap_2d::Costmap2D* costmap_, DynamicVoronoi
 		ROS_INFO("Is voronoi start compute %d", voronoi_->isVoronoi(start_x, start_y));		
         }
 	
-	res2 = computePath(&path2, start_x, start_y, goal_x, goal_y, voronoi_, 1, 0);
+        res2 = computeAStarPath(&path2, start_x, start_y, goal_x, goal_y, voronoi_);
+	//res2 = computeUniformCostPath(&path2, start_x, start_y, goal_x, goal_y, voronoi_, 1, 0);
         ROS_INFO("computePath %d", res2);
 
         if (!(res1 && res2 && res3)) {
@@ -276,7 +277,7 @@ void VoronoiPlanner::smoothPath(std::vector<std::pair<float, float> > *path) {
         *path = newpath;
 }
 
-bool VoronoiPlanner::computePath(std::vector<std::pair<float, float> > *path, int init_x,
+bool VoronoiPlanner::computeUniformCostPath(std::vector<std::pair<float, float> > *path, int init_x,
 		int init_y, int goal_x, int goal_y, DynamicVoronoi *voronoi,
 		bool check_is_voronoi_cell, bool stop_at_voronoi) {
 
@@ -418,6 +419,135 @@ bool VoronoiPlanner::computePath(std::vector<std::pair<float, float> > *path, in
 
 	reverse(path->begin(), path->end());
 	return true;
+}
+
+bool VoronoiPlanner::computeAStarPath(std::vector<std::pair<float, float> > *path, int init_x,
+                int init_y, int goal_x, int goal_y, DynamicVoronoi *voronoi){
+        unsigned int sizeX = voronoi->getSizeX();
+        unsigned int sizeY = voronoi->getSizeY();
+
+        std::vector<std::pair<int, int> > delta;
+        delta.push_back( { -1, 0 });            // go up
+        delta.push_back( { 0, -1 });            // go left
+        delta.push_back( { 1, 0 });             // go down
+        delta.push_back( { 0, 1 });             // go right
+        delta.push_back( { -1, -1 });           // up and left
+        delta.push_back( { -1, 1 });            // up and right
+        delta.push_back( { 1, -1 });            // down and left
+        delta.push_back( { 1, 1 });             // down and right
+
+        float g, f, h;
+        g = 0;
+        h = fabs(init_x - goal_x) + fabs(init_y - goal_y);
+        f = g + h;
+
+        NodeAStar * start = new NodeAStar(init_x, init_y, f, g, h, nullptr);
+
+        std::vector < std::tuple<float, NodeAStar *> > open;
+
+        open.push_back(std::make_tuple(f, start));
+
+        std::vector <NodeAStar *> closed;
+        NodeAStar * goalNode = nullptr;
+
+        bool foundPath = false;
+        while(open.size() > 0 && !foundPath){
+                // Sort open by cost
+                sort(open.begin(), open.end());
+                reverse(open.begin(), open.end());
+                std::tuple<float, NodeAStar *> tuple = open[open.size() - 1];
+                open.pop_back();
+
+                NodeAStar * current = std::get <1> (tuple);
+
+                //std::cout << "Current node:" << current->x << "," << current->y << std::endl;
+
+                if (current->x == goal_x && current->y == goal_y) {
+                        goalNode = current;
+                        foundPath = true;
+                        continue;
+                }
+
+                closed.push_back(current);
+
+                for (int i = 0; i < delta.size(); i++) {
+
+                        int xn = current->x + std::get < 0 > (delta[i]);
+                        int yn = current->y + std::get < 1 > (delta[i]);
+
+                        //std::cout << "Neighbor node:" << xn << "," << yn << std::endl;
+
+                        if (xn >= 0 && xn < sizeX && yn >= 0 && yn < sizeY) {
+                                // Check new node expasion not to be in obstacle
+                                if (voronoi->isOccupied(xn, yn)) {
+                                        continue;
+                                }
+
+                                // check new node is on Voronoi diagram
+                                if (!voronoi->isVoronoi(xn, yn)) {
+                                        continue;
+                                }
+                        }
+
+                        //std::cout << "Is a voronoi cell" << std::endl;
+
+                        NodeAStar * neighbor = new NodeAStar();
+
+                        neighbor->x = xn;
+                        neighbor->y = yn;
+
+                        neighbor->h = fabs(neighbor->x - goal_x) + fabs(neighbor->y - goal_y);
+                        if(fabs(std::get < 0 > (delta[i])) == 1 && fabs(std::get < 1 > (delta[i])) == 1){
+                                //std::cout << "Diagonal:" << std::endl;
+                                neighbor->g = current->g +  1.414;
+                        }
+                        else{
+                                //std::cout << "Lateral:" << std::endl;
+                                neighbor->g = current->g +  1.0;
+                        }
+                        neighbor->parent = current;
+
+                        bool found = false;
+                        for(int j = 0; j < closed.size() && !found; j++){
+                                if(neighbor->x == closed[j]->x && neighbor->y == closed[j]->y)
+                                        found = true;
+                        }
+
+                        if(!found){
+                                //std::cout << "Not Found in the closed list:" << std::endl; 
+                                neighbor->f = neighbor->g + neighbor->h;
+                                int indexFound = -1;
+                                for(int j = 0; j < open.size() && indexFound < 0; j++){
+                                        int xon = std::get<1>(open[j])->x;
+                                        int yon = std::get<1>(open[j])->y;
+                                        if(xon == neighbor->x && yon == neighbor->y)
+                                                indexFound = j;
+                                }
+                                if(indexFound < 0){
+                                        //std::cout << "Insert node in open list" << std::endl;
+                                        open.push_back(std::make_tuple(neighbor->f, neighbor));
+                                }
+                                else{
+                                        //std::cout << "Have found a node in open list" << std::endl;
+                                        if(neighbor->g < std::get<1>(open[indexFound])->g){
+                                                std::get<1>(open[indexFound])->g = neighbor->g;
+                                                std::get<1>(open[indexFound])->parent = neighbor->parent;
+                                        }
+                                }
+                        }
+                }
+        }
+        if(foundPath){
+                std::cout << "Found path:" << std::endl;
+                NodeAStar * node = goalNode;
+                while(node != nullptr){
+                        path->push_back( { node->x, node->y });
+                        node = node->parent;
+                }
+                reverse(path->begin(), path->end());
+                return true;
+        }
+        return false;
 }
 
 nav_msgs::Path VoronoiPlanner::makePathFromPoses(const std::vector<geometry_msgs::PoseStamped>& path_poses){

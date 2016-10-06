@@ -403,8 +403,8 @@ int main(int argc, char ** argv){
 
 	std::map<std::string, std::vector<float> > locations = loadKnownLocations(locationsFilePath);
 
-	MotionPlannerSymAction actionSym("sym_motion_planner_action", locations);
-    MotionPlannerGridAction actionGtid("grid_motion_planner_action", locations);
+	MotionPlannerSymAction actionSym("motion_planner_action_sym", locations);
+    MotionPlannerGridAction actionGtid("motion_planner_action_grid", locations);
 
     ros::Publisher loc_marker_pub = n.advertise<visualization_msgs::Marker>("loc_marker", 10);
 
