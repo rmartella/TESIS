@@ -333,20 +333,18 @@ bool testToPathDirect(Vertex2 inicio, Vertex2 fin, Polygon * polygons, int num_p
  		for (int j = 0; j < polygon.num_vertex && pathFree; j++) {
  			Vertex2 vertex1 = polygon.vertex[j];
  			Vertex2 vertex2;
-	 		if (j < polygon.num_vertex)
+	 		if (j < polygon.num_vertex - 1)
 	 			vertex2 = polygon.vertex[j + 1];
 	 		else
-	 			vertex2 = polygon.vertex[1];
-	 		Segment segment(vertex1, vertex2);
+	 			vertex2 = polygon.vertex[0];
+	 		Segment sie(vertex1, vertex2);
 			Segment s1;
 			Segment s2;
-			computeParallelLines(segment, &s1, &s2, ratio);
+			computeParallelLines(Segment(inicio, fin), &s1, &s2, ratio);
 	 		//pathFree = !testSegmentIntersect(Segment(inicio, fin), Segment(vertex1, vertex2));
-	 		if (testSegmentIntersect(Segment(inicio, fin), Segment(vertex1, vertex2))
-					|| testSegmentIntersect(s1,
-							Segment(vertex1, vertex2))
-					|| testSegmentIntersect(s2,
-							Segment(vertex1, vertex2)))
+	 		if (testSegmentIntersect(Segment(inicio, fin), sie)
+					|| testSegmentIntersect(s1, sie)
+					|| testSegmentIntersect(s2, sie))
 	 			pathFree = false;
  		}
  	}

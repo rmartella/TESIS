@@ -17,6 +17,8 @@ EnvironmentUtil envu;
 biorobotics::Polygon * polygons_ptr = nullptr;
 int num_polygons = 0;
 
+std::vector<biorobotics::Polygon> grownPol;
+
 Vertex2 * vertexMap;
 int sizeVertexMap = 0;
 bool ** adyacencies;
@@ -42,7 +44,7 @@ bool pathPlanningWithSymbolicMapDjskCallback(common::PathPlanning::Request& req,
 	std::vector<biorobotics::Polygon> polygons = std::vector<Polygon>(
 			polygons_ptr, polygons_ptr + num_polygons);
 
-	std::vector<biorobotics::Polygon> grownPol = grownPolygons(polygons, 0.33);
+	grownPol = grownPolygons(polygons, 0.34);
 	adyacencies = computeMapTopologic(polygons, grownPol, 0.24,
 			&sizeAdyacencies);
 	vertexMap = createVertexPointerFromPolygons(&grownPol[0], num_polygons,
@@ -53,8 +55,8 @@ bool pathPlanningWithSymbolicMapDjskCallback(common::PathPlanning::Request& req,
 	 adyacencies = computeMapTopologicVD(vd, polygons, 0.3, &sizeAdyacencies,
 	 vertexMap, sizeVertexMap);*/
 
-	adyacencies = addNodesInitEndToMap(init, end, polygons.data(),
-			polygons.size(), vertexMap, adyacencies, &sizeAdyacencies, 0.33);
+	adyacencies = addNodesInitEndToMap(init, end, polygons_ptr,
+			polygons.size(), vertexMap, adyacencies, &sizeAdyacencies, 0.24);
 	vertexMap = addVertexInitEndToVertexMap(init, end, vertexMap,
 			&sizeVertexMap);
 	pathDijk = dijsktra(adyacencies, sizeAdyacencies, vertexMap);
@@ -137,6 +139,7 @@ int main(int argc, char ** argv) {
 		if (vertexMap != nullptr && adyacencies != nullptr)
 			sendToVizMap(vertexMap, adyacencies, sizeAdyacencies,
 					&map_marker_pub);
+		sendToVizPolygonMarker(grownPol, "grown_polygons", &map_marker_pub);
 		last_calc_path.publish(lastPath);
 		rate.sleep();
 		ros::spinOnce();

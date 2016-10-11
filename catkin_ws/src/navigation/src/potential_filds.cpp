@@ -21,7 +21,7 @@ public:
 					false);
 		as->start();
 
-		algoPf = new PotentialFields(20, 0.37, 0.5, 20, 20);
+		algoPf = new PotentialFields(6, 0.37, 2.5, 4, 2);
 
 		laserUtil.initRosConnection(&nh);
 		navigationUtil.initRosConnection(&nh);
@@ -57,7 +57,7 @@ public:
 		goalTheta = msg->pose.theta;
 		timeout = msg->timeout;
 
-		ros::Rate rate(10);
+		ros::Rate rate(30);
 		
 		while(ros::ok() && ((curr - prev).total_milliseconds() < timeout || timeout == 0)){
 

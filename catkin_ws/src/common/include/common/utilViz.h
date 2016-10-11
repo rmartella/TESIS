@@ -231,6 +231,46 @@ void sendToVizLocationMarker(std::map<std::string, std::vector<float> > location
     marker_pub->publish(m);
 }
 
+void sendToVizPolygonMarker(std::vector<biorobotics::Polygon> polygons, std::string ns,
+		ros::Publisher * marker_pub){
+	visualization_msgs::Marker map_marker;
+	map_marker.header.frame_id = "/map";
+	map_marker.header.stamp = ros::Time::now();
+	map_marker.ns = ns;
+	map_marker.action = visualization_msgs::Marker::ADD;
+	map_marker.pose.orientation.w = 1.0;
+	map_marker.id = 2;
+	map_marker.type = visualization_msgs::Marker::LINE_LIST;
+	map_marker.scale.x = 0.02;
+	map_marker.color.r = 1.0;
+	map_marker.color.g = 0.0;
+	map_marker.color.b = 1.0;
+	map_marker.color.a = 1.0;
+
+	for (int i = 0; i < polygons.size(); i++) {
+ 		Polygon polygon = polygons[i];
+ 		for (int j = 0; j < polygon.num_vertex; j++) {
+ 			Vertex2 vertex1 = polygon.vertex[j];
+ 			Vertex2 vertex2;
+	 		if (j < polygon.num_vertex - 1)
+	 			vertex2 = polygon.vertex[j + 1];
+	 		else
+	 			vertex2 = polygon.vertex[0];
+			geometry_msgs::Point p;
+			p.x = vertex1.x;
+			p.y = vertex1.y;
+			p.z = 0.0;
+			map_marker.points.push_back(p);
+			p.x = vertex2.x;
+			p.y = vertex2.y;
+			p.z = 0.0;
+			map_marker.points.push_back(p);
+	 	}
+	 }
+
+	marker_pub->publish(map_marker);
+}
+
 }
 
 #endif /* INCLUDE_SIMULATOR_SIMULATION_UTILVIZ_H_ */

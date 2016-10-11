@@ -34,7 +34,7 @@ int main(int argc, char ** argv) {
 	ros::init(argc, argv, "lase_simul_scan");
 
 	ros::NodeHandle n;
-	ros::Rate rate(15);
+	ros::Rate rate(30);
 
 	ros::Publisher scan_pub = n.advertise<sensor_msgs::LaserScan>("scan", 1);
 
