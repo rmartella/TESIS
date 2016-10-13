@@ -173,22 +173,50 @@ bool ** computeMapTopologic(std::vector<Polygon> polygons,
 						bool isIntersectBool = false;
 						for (int l = 0; l < polygons.size(); l++) {
 							Polygon polygonTest = polygons[l];
+							Polygon gpolygonTest = grownPolygons[l];
 							for (int m = 0; m < polygonTest.num_vertex; m++) {
 								Vertex2 verticeTest1 = polygonTest.vertex[m];
+								Vertex2 gverticeTest1 = gpolygonTest.vertex[m];
 								Vertex2 verticeTest2;
-								if (m < polygonTest.num_vertex - 1)
+								Vertex2 gverticeTest2;
+								if (m < polygonTest.num_vertex - 1){
 									verticeTest2 = polygonTest.vertex[m + 1];
-								else
+									gverticeTest2 = gpolygonTest.vertex[m + 1];
+								}
+								else{
 									verticeTest2 = polygonTest.vertex[0];
+									gverticeTest2 = gpolygonTest.vertex[0];
+								}
+								/*float d1 = pow(vertex1.x - verticeTest1.x, 2) + pow(vertex1.y - verticeTest1.y, 2);
+								float d2 = pow(vertex2.x - verticeTest1.x, 2) + pow(vertex2.y - verticeTest1.y, 2);*/
+								float d1 = getDeterminant(verticeTest1, verticeTest2, vertex1);
+								float d2 = getDeterminant(verticeTest2, gverticeTest2, vertex1);
+								float d3 = getDeterminant(gverticeTest2, gverticeTest1, vertex1);
+								float d4 = getDeterminant(gverticeTest1, verticeTest1, vertex1);
+
+								float d5 = getDeterminant(verticeTest1, verticeTest2, vertex2);
+								float d6 = getDeterminant(verticeTest2, gverticeTest2, vertex2);
+								float d7 = getDeterminant(gverticeTest2, gverticeTest1, vertex2);
+								float d8 = getDeterminant(gverticeTest1, verticeTest1, vertex2);
+
 								Segment st;
 								st.v1 = verticeTest1;
 								st.v2 = verticeTest2;
-								if (testSegmentIntersect(segment, st)
+								if ((d1 < 0 && d2 < 0 && d3 < 0 && d4 < 0)
+										|| (d5 < 0 && d6 < 0 && d7 < 0 && d8 < 0)
+										|| testSegmentIntersect(segment, st)
 										|| testSegmentIntersect(s1, st)
 										|| testSegmentIntersect(s2, st)) {
 									isIntersectBool = true;
 									break;
 								}
+								/*if (d1 <= ratio * ratio || d2 <= ratio * ratio
+										|| testSegmentIntersect(segment, st)
+										|| testSegmentIntersect(s1, st)
+										|| testSegmentIntersect(s2, st)) {
+									isIntersectBool = true;
+									break;
+								}*/
 							}
 							if (isIntersectBool) {
 								break;
@@ -213,17 +241,45 @@ bool ** computeMapTopologic(std::vector<Polygon> polygons,
 					bool isIntersectBool = false;
 					for (int l = 0; l < polygons.size(); l++) {
 						Polygon polygonTest = polygons[l];
+						Polygon gpolygonTest = grownPolygons[l];
 						for (int m = 0; m < polygonTest.num_vertex; m++) {
 							Vertex2 verticeTest1 = polygonTest.vertex[m];
 							Vertex2 verticeTest2;
-							if (m < polygonTest.num_vertex - 1)
+							Vertex2 gverticeTest1 = gpolygonTest.vertex[m];
+							Vertex2 gverticeTest2;
+							if (m < polygonTest.num_vertex - 1){
 								verticeTest2 = polygonTest.vertex[m + 1];
-							else
+								gverticeTest2 = gpolygonTest.vertex[m + 1];
+							}
+							else{
 								verticeTest2 = polygonTest.vertex[0];
+								gverticeTest2 = gpolygonTest.vertex[0];
+							}
 							Segment st;
 							st.v1 = verticeTest1;
 							st.v2 = verticeTest2;
-							if (testSegmentIntersect(segment, st)) {
+							/*float d1 = pow(vertex1.x - verticeTest1.x, 2) + pow(vertex1.y - verticeTest1.y, 2);
+							float d2 = pow(vertex2.x - verticeTest1.x, 2) + pow(vertex2.y - verticeTest1.y, 2);
+							if (d1 <= ratio * ratio || d2 <= ratio * ratio)
+								std::cout << "Entro en condicion" << std::endl;
+							if (d1 <= ratio * ratio || d2 <= ratio * ratio ||
+									testSegmentIntersect(segment, st)) {
+								isIntersectBool = true;
+								break;
+							}*/
+							float d1 = getDeterminant(verticeTest1, verticeTest2, vertex1);
+							float d2 = getDeterminant(verticeTest2, gverticeTest2, vertex1);
+							float d3 = getDeterminant(gverticeTest2, gverticeTest1, vertex1);
+							float d4 = getDeterminant(gverticeTest1, verticeTest1, vertex1);
+
+							float d5 = getDeterminant(verticeTest1, verticeTest2, vertex2);
+							float d6 = getDeterminant(verticeTest2, gverticeTest2, vertex2);
+							float d7 = getDeterminant(gverticeTest2, gverticeTest1, vertex2);
+							float d8 = getDeterminant(gverticeTest1, verticeTest1, vertex2);
+
+							if ((d1 < 0 && d2 < 0 && d3 < 0 && d4 < 0)
+									|| (d5 < 0 && d6 < 0 && d7 < 0 && d8 < 0)
+									|| testSegmentIntersect(segment, st)) {
 								isIntersectBool = true;
 								break;
 							}
@@ -351,7 +407,7 @@ bool testToPathDirect(Vertex2 inicio, Vertex2 fin, Polygon * polygons, int num_p
  	return pathFree;
 }
 
-bool ** addNodesInitEndToMap(Vertex2 init, Vertex2 end, Polygon * polygons,
+bool ** addNodesInitEndToMap(Vertex2 init, Vertex2 end, Polygon * polygons, Polygon * grownPolygons,
 		int sizePolygons, Vertex2 * vertexMap, bool ** adyacencies,
 		int * sizeAdjacenciesPtr, float ratio) {
 
@@ -396,10 +452,26 @@ bool ** addNodesInitEndToMap(Vertex2 init, Vertex2 end, Polygon * polygons,
 					l++) {
 				Vertex2 vertex1 = polygons[k].vertex[l];
 				Vertex2 vertex2;
-				if (l < polygons[k].num_vertex - 1)
+				Vertex2 gverticeTest1 = grownPolygons[k].vertex[l];
+				Vertex2 gverticeTest2;
+				if (l < polygons[k].num_vertex - 1){
 					vertex2 = polygons[k].vertex[l + 1];
-				else
+					gverticeTest2 = grownPolygons[k].vertex[l + 1];
+				}
+				else{
 					vertex2 = polygons[k].vertex[0];
+					gverticeTest2 = grownPolygons[k].vertex[0];
+				}
+
+				float d1 = getDeterminant(vertex1, vertex2, vertexTargetBind);
+				float d2 = getDeterminant(vertex2, gverticeTest2, vertexTargetBind);
+				float d3 = getDeterminant(gverticeTest2, gverticeTest1, vertexTargetBind);
+				float d4 = getDeterminant(gverticeTest1, vertex1, vertexTargetBind);
+
+				if (d1 < 0 && d2 < 0 && d3 < 0 && d4 < 0) {
+					isIntersectInicioBool = true;
+					isIntersectFinBool = true;					
+				}
 				if (!isIntersectInicioBool
 						&& (testSegmentIntersect(sI, Segment(vertex1, vertex2))
 								|| testSegmentIntersect(sI1,

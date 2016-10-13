@@ -44,7 +44,7 @@ bool pathPlanningWithSymbolicMapDjskCallback(common::PathPlanning::Request& req,
 	std::vector<biorobotics::Polygon> polygons = std::vector<Polygon>(
 			polygons_ptr, polygons_ptr + num_polygons);
 
-	grownPol = grownPolygons(polygons, 0.34);
+	grownPol = grownPolygons(polygons, 0.3);
 	adyacencies = computeMapTopologic(polygons, grownPol, 0.24,
 			&sizeAdyacencies);
 	vertexMap = createVertexPointerFromPolygons(&grownPol[0], num_polygons,
@@ -55,7 +55,7 @@ bool pathPlanningWithSymbolicMapDjskCallback(common::PathPlanning::Request& req,
 	 adyacencies = computeMapTopologicVD(vd, polygons, 0.3, &sizeAdyacencies,
 	 vertexMap, sizeVertexMap);*/
 
-	adyacencies = addNodesInitEndToMap(init, end, polygons_ptr,
+	adyacencies = addNodesInitEndToMap(init, end, polygons_ptr, &grownPol[0],
 			polygons.size(), vertexMap, adyacencies, &sizeAdyacencies, 0.24);
 	vertexMap = addVertexInitEndToVertexMap(init, end, vertexMap,
 			&sizeVertexMap);

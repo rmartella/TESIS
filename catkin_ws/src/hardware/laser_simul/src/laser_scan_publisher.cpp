@@ -23,9 +23,9 @@ float range_angle_sensor = 3.14;
 int num_sensors = 4000;
 float range_min = 0.0;
 float range_max = 8.0;*/
-float angle_min = -M_PI_2;
-float range_angle_sensor = M_PI;
-int num_sensors = 1000;
+float angle_min = -(M_PI_2 + M_PI_4);
+float range_angle_sensor = M_PI + M_PI_2;
+int num_sensors = 768;
 float range_min = 0.0;
 float range_max = 8.0;
 
