@@ -23,13 +23,15 @@ public:
 	virtual ~EnvironmentUtil();
 
 	void initRosConnection(ros::NodeHandle * n);
-	std::vector<geometry_msgs::Polygon> call();
+	std::vector<geometry_msgs::Polygon> getKnownPolygons();
+	std::vector<geometry_msgs::Polygon> getAllPolygons();
 	biorobotics::Polygon * convertGeometryMsgToPolygons(
 			std::vector<geometry_msgs::Polygon> polygonsMsg,
 			biorobotics::Polygon * polygons_ptr, int * num_polygons_ptr);
 
 protected:
-	ros::ServiceClient * client;
+	ros::ServiceClient * clientAll;
+	ros::ServiceClient * clientKnown;
 };
 
 #endif /* SRC_ENVIRONMENTUTIL_H_ */

@@ -49,7 +49,7 @@ int main(int argc, char ** argv) {
 
 	double laser_frequency = 40;
 
-	polygons_ptr = envu.convertGeometryMsgToPolygons(envu.call(),
+	polygons_ptr = envu.convertGeometryMsgToPolygons(envu.getAllPolygons(),
 				polygons_ptr, &num_polygons);
 
 	while (ros::ok()) {
@@ -89,7 +89,7 @@ int main(int argc, char ** argv) {
 			float endX = currX + range_max * cos(angleSensor);
 			float endy = currY + range_max * sin(angleSensor);
 
-			float min = -1;
+			float min = 0;
 			bool laserint = false;
 			for (int j = 0; j < num_polygons; j++) {
 				biorobotics::Polygon polygon = polygons_ptr[j];
@@ -117,7 +117,7 @@ int main(int argc, char ** argv) {
 										biorobotics::Segment(v1, v2));
 						float d =
 								biorobotics::Vertex2(startX, startY).sub(vint).norm();
-						if (min < 0)
+						if (min == 0)
 							min = d;
 						else if (d < min)
 							min = d;

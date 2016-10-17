@@ -11,27 +11,44 @@
 #include "common/EnvironmentUtil.h"
 
 EnvironmentUtil::EnvironmentUtil() {
-	client = nullptr;
+	clientAll = nullptr;
+	clientKnown = nullptr;
 }
 
 EnvironmentUtil::EnvironmentUtil(ros::NodeHandle * n) {
-	client = new ros::ServiceClient(
-			n->serviceClient<common::Environment>("environment_service"));
+	clientAll = new ros::ServiceClient(
+			n->serviceClient<common::Environment>("all_environment_service"));
+	clientKnown = new ros::ServiceClient(
+			n->serviceClient<common::Environment>("known_environment_service"));
 }
 
 EnvironmentUtil::~EnvironmentUtil() {
-	delete client;
+	delete clientAll;
+	delete clientKnown;
 }
 
 void EnvironmentUtil::initRosConnection(ros::NodeHandle * n) {
-	client = new ros::ServiceClient(
-			n->serviceClient<common::Environment>("environment_service"));
+	clientAll = new ros::ServiceClient(
+			n->serviceClient<common::Environment>("all_environment_service"));
+	clientKnown = new ros::ServiceClient(
+			n->serviceClient<common::Environment>("known_environment_service"));
 }
 
-std::vector<geometry_msgs::Polygon> EnvironmentUtil::call() {
+std::vector<geometry_msgs::Polygon> EnvironmentUtil::getAllPolygons(){
 	common::Environment srv;
 	std::vector<geometry_msgs::Polygon> polygonssrv;
-	if (client->call(srv)) {
+	if (clientAll->call(srv)) {
+		polygonssrv = srv.response.polygons;
+	} else {
+		ROS_ERROR("Failed to call service Environment");
+	}
+	return polygonssrv;
+}
+
+std::vector<geometry_msgs::Polygon> EnvironmentUtil::getKnownPolygons() {
+	common::Environment srv;
+	std::vector<geometry_msgs::Polygon> polygonssrv;
+	if (clientKnown->call(srv)) {
 		polygonssrv = srv.response.polygons;
 	} else {
 		ROS_ERROR("Failed to call service Environment");

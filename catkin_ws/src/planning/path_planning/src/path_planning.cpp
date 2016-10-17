@@ -38,7 +38,7 @@ bool pathPlanningWithSymbolicMapDjskCallback(common::PathPlanning::Request& req,
 	Vertex2 init(req.start.x, req.start.y);
 	Vertex2 end(req.goal.x, req.goal.y);
 
-	polygons_ptr = envu.convertGeometryMsgToPolygons(envu.call(), polygons_ptr,
+	polygons_ptr = envu.convertGeometryMsgToPolygons(envu.getKnownPolygons(), polygons_ptr,
 			&num_polygons);
 
 	std::vector<biorobotics::Polygon> polygons = std::vector<Polygon>(

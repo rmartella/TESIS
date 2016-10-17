@@ -20,4 +20,4 @@ include_directories(
 )
 
 add_executable(motion_planner src/motion_planner.cpp)
-target_link_libraries(motion_planner ${common_LIBRARIES} ${catkin_LIBRARIES} PathPlanningUtil)
+target_link_libraries(motion_planner ${common_LIBRARIES} ${catkin_LIBRARIES} PathPlanningUtil LaserScanUtil)

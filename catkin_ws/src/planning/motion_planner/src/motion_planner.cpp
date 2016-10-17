@@ -8,8 +8,10 @@
 
 #include "common/PathPlanningUtil.h"
 #include "common/NavigationUtil.h"
+#include "common/LaserScanUtil.h"
 
 #include "common/utilViz.h"
+#include "common/utilSimulator.h"
 
 #include "actionlib/server/simple_action_server.h"
 #include "common/MotionPlannerSymAction.h"
@@ -203,7 +205,7 @@ public:
                         state = SM_WAIT_REACHED_GOAL;
                 break;
                 case SM_CORRECT_ANGLE:
-                    turn = goalTheta- currTheta;
+                    turn = goalTheta - currTheta;
                     if(turn > M_PI) 
                         turn -= 2*M_PI;
                     if(turn <= -M_PI) 
@@ -255,6 +257,7 @@ public:
                     false);
         as->start();
         
+        laserUtil.initRosConnection(&nh);
         pathPlanningUtil.initRosConnection(&nh);
         navigationUtil.initRosConnection(&nh);
     }
@@ -310,8 +313,16 @@ public:
             }
             navigationUtil.getCurrPose(currX, currY, currTheta);
 
+            biorobotics::LaserScan * laserScan = laserUtil.getLaserScan();
+            int sensor = 0;
+            if(laserScan != 0){
+                sensor = biorobotics::quantizedInputs(laserScan, currTheta, 0.4, 0.4);
+                std::cout << "sensor:" << sensor << std::endl;
+            }
+
             switch(state){
                 case SM_INIT:
+                    indexCurrPath = 0;
                     path = pathPlanningUtil.planPathGridMap(currX, currY, goalX, goalY, success);
                     if(success){
                         success = false;
@@ -337,19 +348,25 @@ public:
                     }
                 break;
                 case SM_NAV_NEXT_GOAL:
-                    navigationUtil.asyncPotentialFields(nextX, nextY);
-                    //navigationUtil.asyncMovePose(nextX, nextY, 0, false);
+                    //navigationUtil.asyncPotentialFields(nextX, nextY);
+                    navigationUtil.asyncMovePose(nextX, nextY, 0, false);
                     state = SM_WAIT_REACHED_GOAL;
                 break;
                 case SM_WAIT_REACHED_GOAL:
-                    if(navigationUtil.finishedCurrMotionPF()){
-                    //if(navigationUtil.finishedCurrMotionPose()){
-                        indexCurrPath++;
-                        std::cout << "Go to the new position i:" << indexCurrPath << std::endl;
-                        state = SM_GET_NEXT_POSITION;
+                    if(sensor > 0){
+                        navigationUtil.stopMotion();
+                        state = SM_REPLANNING;
                     }
-                    else
-                        state = SM_WAIT_REACHED_GOAL;
+                    else{
+                        //if(navigationUtil.finishedCurrMotionPF()){
+                        if(navigationUtil.finishedCurrMotionPose()){
+                            indexCurrPath++;
+                            std::cout << "Go to the new position i:" << indexCurrPath << std::endl;
+                            state = SM_GET_NEXT_POSITION;
+                        }
+                        else
+                            state = SM_WAIT_REACHED_GOAL;
+                    }
                 break;
                 case SM_CORRECT_ANGLE:
                     turn = goalTheta- currTheta;
@@ -361,6 +378,15 @@ public:
                     std::cout << "FINSH" << std::endl;
                     state = SM_FINISH;
                     navigationUtil.stopMotion();
+                break;
+                case SM_REPLANNING:
+                    if(sensor == 1)
+                        navigationUtil.syncMoveDist(-0.2, true, 0);
+                    else if(sensor == 2)
+                        navigationUtil.syncMoveDist(0.2, true, 0);
+                    else if(sensor == 3)
+                        navigationUtil.syncMoveDist(-0.2, false, 0);
+                    state = SM_INIT;
                 break;
             }
             rate.sleep();
@@ -380,6 +406,7 @@ private:
 
     PathPlanningUtil pathPlanningUtil;
     NavigationUtil navigationUtil;
+    LaserScanUtil laserUtil;
 
     std::map<std::string, std::vector<float> > locations;
 };

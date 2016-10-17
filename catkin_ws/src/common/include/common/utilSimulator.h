@@ -35,9 +35,7 @@ float getNextPosition(float a3, float a2, float t) {
 	return xt;
 }
 
-/*int quantizedInputs(const std::vector<simulator::LaserSensor> &sensors,
-		const float angleRobot, const float rangeSensor,
-		const float thresholdSensor) {
+int quantizedInputs(LaserScan * laserScan, float angleRobot, float thray, float thsensor) {
 	float sd = 0.0f;
 	float si = 0.0f;
 	float averageI;
@@ -47,38 +45,40 @@ float getNextPosition(float a3, float a2, float t) {
 	int countNoSenseI = 0;
 	int countNoSenseD = 0;
 	int value = 0;
-	for (unsigned int i = 0; i < sensors.size(); i++) {
-		if (sensors.at(i).angle < angleRobot) {
-			sd += sensors.at(i).distance;
+	for (unsigned int i = 0; i < laserScan->num_scans; i++) {
+		float angleSensor = angleRobot + laserScan->angle_min + i * laserScan->angle_increment;
+		if (angleSensor < angleRobot) {
 			numD++;
-			if (!sensors.at(i).instersected)
-				countNoSenseD++;
+			if(laserScan->ranges[i] <= thray)
+				sd += laserScan->ranges[i];
 		} else {
-			si += sensors.at(i).distance;
 			numI++;
-			if (!sensors.at(i).instersected)
-				countNoSenseI++;
+			if(laserScan->ranges[i] <= thray)
+				si += laserScan->ranges[i];
 		}
 	}
+	std::cout << "countNoSenseD:" << countNoSenseD << std::endl;
+	std::cout << "countNoSenseD:" << countNoSenseD << std::endl;
+	std::cout << "numD:" << numD << std::endl;
+	std::cout << "numI:" << numI << std::endl;
+	std::cout << "sd:" << sd << std::endl;
+	std::cout << "si:" << si << std::endl;
+
 	if (countNoSenseI == numI)
 		countNoSenseI = 0;
 	if (countNoSenseD == numD)
 		countNoSenseD = 0;
-	averageI = si / (float) (numI);
-	 averageD = sd / (float) (numD);
-	averageI = si;
-	averageD = sd;
+	/*averageI = si / (float) (numI);
+	averageD = sd / (float) (numD);*/
+	averageI = si / numD;
+	averageD = sd / numI;
 
-	if (averageI
-			< rangeSensor * countNoSenseI
-					+ thresholdSensor * (numI - countNoSenseI))
+	if (averageI < thsensor && sd > 0)
 		value = (value << 1) + 1;
 	else
 		value = (value << 1) + 0;
 
-	if (averageD
-			< rangeSensor * countNoSenseD
-					+ thresholdSensor * (numD - countNoSenseD))
+	if (averageD < thsensor && si > 0)
 		value = (value << 1) + 1;
 	else
 		value = (value << 1) + 0;
@@ -86,34 +86,6 @@ float getNextPosition(float a3, float a2, float t) {
 	value = value & 0xFFFFFFFF;
 	return value;
 }
-
-simulator::MotionCommand generateOutputMotion(TypeMotion typeMotion,
-		float distance, float angle) {
-	simulator::MotionCommand output;
-	switch (typeMotion) {
-	case STOP:
-		output.request.distance = 0.0f;
-		output.request.angle = 0.0f;
-		break;
-	case FORWARD:
-		output.request.distance = distance;
-		output.request.angle = 0.0f;
-		break;
-	case BACKWARD:
-		output.request.distance = -distance;
-		output.request.angle = 0.0f;
-		break;
-	case LEFT:
-		output.request.distance = 0.0f;
-		output.request.angle = angle;
-		break;
-	case RIGHT:
-		output.request.distance = 0.0f;
-		output.request.angle = -angle;
-		break;
-	}
-	return output;
-}*/
 
 float computeArea(Polygon polygon) {
 	int i;

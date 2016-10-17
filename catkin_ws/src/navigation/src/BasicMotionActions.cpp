@@ -350,7 +350,7 @@ public:
 		}
 
 		if(polygons_ptr == 0)
-			polygons_ptr = envu.convertGeometryMsgToPolygons(envu.call(),
+			polygons_ptr = envu.convertGeometryMsgToPolygons(envu.getAllPolygons(),
 					polygons_ptr, &num_polygons);
 
 		bm->doGoalMotion(goalX, goalY, goalTheta, false,
@@ -409,7 +409,7 @@ public:
 			goalTheta += 4 * M_PI;
 
 		if(polygons_ptr == 0)
-			polygons_ptr = envu.convertGeometryMsgToPolygons(envu.call(),
+			polygons_ptr = envu.convertGeometryMsgToPolygons(envu.getAllPolygons(),
 					polygons_ptr, &num_polygons);
 
 		boost::posix_time::ptime prev =
@@ -469,7 +469,7 @@ public:
 		bool success, preempted;
 
 		if(polygons_ptr == 0)
-			polygons_ptr = envu.convertGeometryMsgToPolygons(envu.call(),
+			polygons_ptr = envu.convertGeometryMsgToPolygons(envu.getAllPolygons(),
 					polygons_ptr, &num_polygons);
 
 		bm->doGoalMotion(msg->pose.x, msg->pose.y, msg->pose.theta, msg->correctAngle, false,
@@ -509,7 +509,7 @@ public:
 		bool success, preempted;
 
 		if(polygons_ptr == 0)
-			polygons_ptr = envu.convertGeometryMsgToPolygons(envu.call(),
+			polygons_ptr = envu.convertGeometryMsgToPolygons(envu.getAllPolygons(),
 					polygons_ptr, &num_polygons);
 
 		if (path.poses.size() > 0) {

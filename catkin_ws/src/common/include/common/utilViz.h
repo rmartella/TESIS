@@ -99,13 +99,13 @@ void sendToVizFloorEnvironment(
 }
 
 void sendToVizEnvironment(biorobotics::Triangle * triangulationPtr,
-		int num_triangles, ros::Publisher * marker_pub) {
+		int num_triangles, ros::Publisher * marker_pub, std::string ns, float r, float g, float b) {
 
 	/*Marker Environment*/
 	visualization_msgs::Marker objects_marker;
 	objects_marker.header.frame_id = "/map";
 	objects_marker.header.stamp = ros::Time::now();
-	objects_marker.ns = "objects_marker";
+	objects_marker.ns = ns;
 	objects_marker.action = visualization_msgs::Marker::ADD;
 	objects_marker.pose.position.z = 0.0;
 	objects_marker.pose.orientation.w = 1.0;
@@ -113,9 +113,12 @@ void sendToVizEnvironment(biorobotics::Triangle * triangulationPtr,
 	objects_marker.scale.x = 1.0;
 	objects_marker.scale.y = 1.0;
 	objects_marker.scale.z = 1.0;
-	objects_marker.color.r = 0.6f;
+	/*objects_marker.color.r = 0.6f;
 	objects_marker.color.g = 0.4f;
-	objects_marker.color.b = 0.2f;
+	objects_marker.color.b = 0.2f;*/
+	objects_marker.color.r = r;
+	objects_marker.color.g = g;
+	objects_marker.color.b = b;
 	objects_marker.color.a = 1.0;
 
 	/*Marker Environment*/
