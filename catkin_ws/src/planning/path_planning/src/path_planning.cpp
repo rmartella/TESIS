@@ -38,17 +38,25 @@ bool pathPlanningWithSymbolicMapDjskCallback(common::PathPlanning::Request& req,
 	Vertex2 init(req.start.x, req.start.y);
 	Vertex2 end(req.goal.x, req.goal.y);
 
-	polygons_ptr = envu.convertGeometryMsgToPolygons(envu.getKnownPolygons(), polygons_ptr,
+	std::vector<geometry_msgs::Polygon> allPolygons = envu.getKnownPolygons();
+	std::cout << "size sensor polygons:" << req.polygons.size() << std::endl;
+	allPolygons.insert(allPolygons.begin(), req.polygons.begin(), req.polygons.end());
+	polygons_ptr = envu.convertGeometryMsgToPolygons(allPolygons, polygons_ptr,
 			&num_polygons);
+	std::cout << "Convert Polygons:" << std::endl;
 
-	std::vector<biorobotics::Polygon> polygons = std::vector<Polygon>(
+
+	std::vector<biorobotics::Polygon> polygons = std::vector<biorobotics::Polygon>(
 			polygons_ptr, polygons_ptr + num_polygons);
 
 	grownPol = grownPolygons(polygons, 0.3);
+	std::cout << "Grown Polygons:" << std::endl;
 	adyacencies = computeMapTopologic(polygons, grownPol, 0.24,
 			&sizeAdyacencies);
+	std::cout << "Compute Map Polygons:" << std::endl;
 	vertexMap = createVertexPointerFromPolygons(&grownPol[0], num_polygons,
 			&sizeVertexMap);
+	std::cout << "Create Vertex of Map Polygons:" << std::endl;
 
 	/*VD * vd = computeVD(polygons);
 	 vertexMap = createVertexPointerFromVD(vd, &sizeVertexMap);
@@ -57,9 +65,12 @@ bool pathPlanningWithSymbolicMapDjskCallback(common::PathPlanning::Request& req,
 
 	adyacencies = addNodesInitEndToMap(init, end, polygons_ptr, &grownPol[0],
 			polygons.size(), vertexMap, adyacencies, &sizeAdyacencies, 0.24);
+	std::cout << "Add node to init and end:" << std::endl;
 	vertexMap = addVertexInitEndToVertexMap(init, end, vertexMap,
 			&sizeVertexMap);
+	std::cout << "Add Vertex to init and end:" << std::endl;
 	pathDijk = dijsktra(adyacencies, sizeAdyacencies, vertexMap);
+	std::cout << "Dijsktra end:" << std::endl;
 
 	nav_msgs::Path path;
 	path.header.frame_id = "map";

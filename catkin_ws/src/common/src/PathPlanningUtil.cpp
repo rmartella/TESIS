@@ -5,7 +5,8 @@ void PathPlanningUtil::initRosConnection(ros::NodeHandle * n){
 	cltPathPlanningGridMap =  n->serviceClient<common::PathPlanning>("path_planning_grid");
 }
 
-nav_msgs::Path PathPlanningUtil::planPathSymbMapDjsk(float startX, float startY, float goalX, float goalY, bool& success){
+nav_msgs::Path PathPlanningUtil::planPathSymbMapDjsk(float startX, float startY, float goalX, float goalY, 
+		std::vector<geometry_msgs::Polygon> polygons, bool& success){
 	common::PathPlanning srv;
 	geometry_msgs::Pose2D start;
 	geometry_msgs::Pose2D goal;
@@ -17,6 +18,7 @@ nav_msgs::Path PathPlanningUtil::planPathSymbMapDjsk(float startX, float startY,
 
 	srv.request.start = start;
 	srv.request.goal = goal;
+	srv.request.polygons = polygons;
 
 	if(cltPathPlanningSymbMapDjsk.call(srv)){
 		success = true;

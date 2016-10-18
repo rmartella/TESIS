@@ -11,7 +11,7 @@
 LaserScanUtil laserUtil;
 NavigationUtil navigationUtil;
 
-float DELTA = 0.24;
+float DELTA = 0.1;
 
 class GoalPotentialFieldsAction {
 public:
@@ -21,7 +21,7 @@ public:
 					false);
 		as->start();
 
-		algoPf = new PotentialFields(6, 0.37, 2.5, 4, 2);
+		algoPf = new PotentialFields(2.65, 0.59, 2.5, 1.8, 3.0);
 
 		laserUtil.initRosConnection(&nh);
 		navigationUtil.initRosConnection(&nh);

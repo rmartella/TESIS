@@ -15,6 +15,8 @@
 
 #include "utilSimulator.h"
 #include "intersectionTest.h"
+#include "geometry_msgs/Polygon.h"
+#include "geometry_msgs/Point32.h"
 
 namespace biorobotics {
 
@@ -308,7 +310,7 @@ void computeParallelLines(Segment segment, Segment * segment1,
 		Segment * segment2, float ratio) {
 	float delX = segment.v2.x - segment.v1.x;
 	float delY = segment.v2.y - segment.v1.y;
-	if (delX == 0) {
+	if (fabs(delX) <= 0.01) {
 		segment1->v1.x = segment.v1.x - ratio;
 		segment1->v1.y = segment.v1.y;
 		segment1->v2.x = segment.v2.x - ratio;
@@ -317,7 +319,7 @@ void computeParallelLines(Segment segment, Segment * segment1,
 		segment2->v1.y = segment.v1.y;
 		segment2->v2.x = segment.v2.x + ratio;
 		segment2->v2.y = segment.v2.y;
-	} else if (delY > -0.3 && delY < 0.3) {
+	} else if (fabs(delY) <= 0.3) {
 		segment1->v1.x = segment.v1.x;
 		segment1->v1.y = segment.v1.y - ratio;
 		segment1->v2.x = segment.v2.x;
@@ -505,6 +507,174 @@ bool ** addNodesInitEndToMap(Vertex2 init, Vertex2 end, Polygon * polygons, Poly
 	 	adyacencies[*sizeAdjacenciesPtr - 2][*sizeAdjacenciesPtr - 1] = 1;
 	}
 	return adyacencies;
+}
+
+std::vector<geometry_msgs::Polygon> getSensorPolygon(LaserScan * laserScan, float xpos, float ypos, 
+		float theta, float thray, float ratio){
+	std::vector<geometry_msgs::Polygon> polygons;
+	int vIndex1 = 0, vIndex2 = 0;
+	int tmpVIndex1 = 0, tmpVIndex2 = 0;
+	bool foundLine = true;
+	for (unsigned int i = 0; i < laserScan->num_scans; i++) {
+		if(laserScan->ranges[i] <= thray && laserScan->ranges[i] >= laserScan->range_min){
+			if(vIndex1 == vIndex2){
+				vIndex2 = i;
+				foundLine = true;
+			}
+			else{
+				float a1 = theta + laserScan->angle_min + vIndex1 * laserScan->angle_increment;
+				float x1 = xpos + laserScan->ranges[vIndex1] * cos(a1);
+				float y1 = ypos + laserScan->ranges[vIndex1] * sin(a1);
+				float a2 = theta + laserScan->angle_min + vIndex2 * laserScan->angle_increment;
+				float x2 = xpos + laserScan->ranges[vIndex2] * cos(a2);
+				float y2 = ypos + laserScan->ranges[vIndex2] * sin(a2);
+				float a3 = theta + laserScan->angle_min + i * laserScan->angle_increment;
+				float x3 = xpos + laserScan->ranges[i] * cos(a3);
+				float y3 = ypos + laserScan->ranges[i] * sin(a3);
+				Vertex2 v1(x1, y1);
+				Vertex2 v2(x2, y2);
+				Vertex2 v3(x3, y3);
+				float det = getDeterminant(v1, v2, v3);
+				if(fabs(det) < 0.0001)
+					vIndex2 = i;
+				else{
+					foundLine = false;
+					tmpVIndex1 = vIndex1;
+					tmpVIndex2 = vIndex2;
+					vIndex1 = i;
+					vIndex2 = i;
+				}
+			}
+		}
+		else{
+			foundLine = false;
+			tmpVIndex1 = vIndex1;
+			tmpVIndex2 = vIndex2;
+			vIndex1 = i + 1;
+			vIndex2 = i + 1;
+		}
+		if(tmpVIndex1 != tmpVIndex2 && tmpVIndex2 <= laserScan->num_scans && !foundLine){
+			geometry_msgs::Polygon polygon;
+			float a1 = theta + laserScan->angle_min + tmpVIndex1 * laserScan->angle_increment;
+			float x1 = xpos + laserScan->ranges[tmpVIndex1] * cos(a1);
+			float y1 = ypos + laserScan->ranges[tmpVIndex1] * sin(a1);
+			float a2 = theta + laserScan->angle_min + tmpVIndex2 * laserScan->angle_increment;
+			float x2 = xpos + laserScan->ranges[tmpVIndex2] * cos(a2);
+			float y2 = ypos + laserScan->ranges[tmpVIndex2] * sin(a2);
+			Segment s(Vertex2(x1, y1), Vertex2(x2, y2));
+			Segment s1;
+			Segment s2;
+			computeParallelLines(s, &s1, &s2, 0.01);
+			Vertex2 v1(s1.v1.x, s1.v1.y);
+			Vertex2 v2(s1.v2.x, s1.v2.y);
+			Vertex2 v3(s2.v2.x, s2.v2.y);
+			float det = getDeterminant(v1, v2, v3);
+			geometry_msgs::Point32 p;
+			if(det > 0){
+				p.x = s1.v1.x;
+				p.y = s1.v1.y;
+				polygon.points.push_back(p);
+				p.x = s1.v2.x;
+				p.y = s1.v2.y;
+				polygon.points.push_back(p);
+				p.x = s2.v2.x;
+				p.y = s2.v2.y;
+				polygon.points.push_back(p);
+				p.x = s2.v1.x;
+				p.y = s2.v1.y;
+			}
+			else{
+				p.x = s1.v2.x;
+				p.y = s1.v2.y;
+				polygon.points.push_back(p);
+				p.x = s1.v1.x;
+				p.y = s1.v1.y;
+				polygon.points.push_back(p);
+				p.x = s2.v1.x;
+				p.y = s2.v1.y;
+				polygon.points.push_back(p);
+				p.x = s2.v2.x;
+				p.y = s2.v2.y;
+			}
+			polygon.points.push_back(p);
+			polygons.push_back(polygon);
+		}
+	}
+
+	if(polygons.size() > 0){
+		geometry_msgs::Polygon polygon;
+		float a1 = theta - M_PI_4;
+		float x1 = xpos + (ratio + 0.1) * cos(a1);
+		float y1 = ypos + (ratio + 0.1) * sin(a1);
+		float a2 = theta + M_PI_4;
+		float x2 = xpos + (ratio + 0.1) * cos(a2);
+		float y2 = ypos + (ratio + 0.1) * sin(a2);
+		Segment s(Vertex2(x1, y1), Vertex2(x2, y2));
+		Segment s1;
+		Segment s2;
+		computeParallelLines(s, &s1, &s2, 0.01);
+		Vertex2 v1(s1.v1.x, s1.v1.y);
+		Vertex2 v2(s1.v2.x, s1.v2.y);
+		Vertex2 v3(s2.v2.x, s2.v2.y);
+		float det = getDeterminant(v1, v2, v3);
+		geometry_msgs::Point32 p;
+		if(det > 0){
+			p.x = s1.v1.x;
+			p.y = s1.v1.y;
+			polygon.points.push_back(p);
+			p.x = s1.v2.x;
+			p.y = s1.v2.y;
+			polygon.points.push_back(p);
+			p.x = s2.v2.x;
+			p.y = s2.v2.y;
+			polygon.points.push_back(p);
+			p.x = s2.v1.x;
+			p.y = s2.v1.y;
+		}
+		else{
+			p.x = s1.v2.x;
+			p.y = s1.v2.y;
+			polygon.points.push_back(p);
+			p.x = s1.v1.x;
+			p.y = s1.v1.y;
+			polygon.points.push_back(p);
+			p.x = s2.v1.x;
+			p.y = s2.v1.y;
+			polygon.points.push_back(p);
+			p.x = s2.v2.x;
+			p.y = s2.v2.y;
+		}
+		polygon.points.push_back(p);
+		polygons.push_back(polygon);
+	}
+
+	return polygons;
+}
+
+biorobotics::Polygon * convertGeometryMsgToPolygons(
+		std::vector<geometry_msgs::Polygon> polygonsMsg,
+		biorobotics::Polygon * polygons_ptr, int * num_polygons_ptr) {
+	if (polygons_ptr != 0) {
+		for (int i = 0; i < *num_polygons_ptr; i++) {
+			biorobotics::Polygon polygon = polygons_ptr[i];
+			delete polygon.vertex;
+		}
+		delete polygons_ptr;
+	}
+	polygons_ptr = new biorobotics::Polygon[polygonsMsg.size()];
+	*num_polygons_ptr = polygonsMsg.size();
+	for (int i = 0; i < *num_polygons_ptr; i++) {
+		biorobotics::Vertex2 * vertex =
+				new biorobotics::Vertex2[polygonsMsg[i].points.size()];
+		for (int j = 0; j < polygonsMsg[i].points.size(); j++) {
+			biorobotics::Vertex2 v(polygonsMsg[i].points[j].x,
+					polygonsMsg[i].points[j].y);
+			vertex[j] = v;
+		}
+		polygons_ptr[i].num_vertex = polygonsMsg[i].points.size();
+		polygons_ptr[i].vertex = vertex;
+	}
+	return polygons_ptr;
 }
 
 } /* namespace biorobotics */

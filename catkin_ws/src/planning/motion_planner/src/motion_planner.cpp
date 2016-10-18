@@ -11,7 +11,7 @@
 #include "common/LaserScanUtil.h"
 
 #include "common/utilViz.h"
-#include "common/utilSimulator.h"
+#include "common/utilMap.h"
 
 #include "actionlib/server/simple_action_server.h"
 #include "common/MotionPlannerSymAction.h"
@@ -82,8 +82,11 @@ class MotionPlannerSymAction {
         SM_NAV_NEXT_GOAL = 5,
         SM_WAIT_REACHED_GOAL = 6,
         SM_CORRECT_ANGLE = 7,
-        SM_REPLANNING = 8,
-        SM_FINISH = 9
+        SM_AVOIDANCE = 8,
+        SM_AVOIDANCE_LEFT = 9,
+        SM_AVOIDANCE_RIGHT = 10,
+        SM_FINISH = 11,
+        SM_STOP = 12,
     };
 
 public:
@@ -96,6 +99,10 @@ public:
         
         pathPlanningUtil.initRosConnection(&nh);
         navigationUtil.initRosConnection(&nh);
+        laserUtil.initRosConnection(&nh);
+        loc_marker_pub = nh.advertise<visualization_msgs::Marker>("sensor_polygon", 10);
+        polygons_ptr = 0;
+        num_polygons = 0;
     }
     ~MotionPlannerSymAction(){
     }
@@ -106,12 +113,17 @@ public:
                 << "," << msg->goalPose.theta << std::endl;
 
         float currX, currY, currTheta, goalX, goalY, goalTheta;
+        biorobotics::Vertex2 lastUpdatePose, currPose;
+        bool init = true, replanning = false;
+        float ratio = 0.5;
 
         float timeout = msg->timeout;
 
         boost::posix_time::ptime prev =
                 boost::posix_time::second_clock::local_time();
         boost::posix_time::ptime curr = prev;
+
+        boost::posix_time::ptime time_min;
 
         if(msg->location.compare("") != 0){
             goalX = locations[msg->location][0];
@@ -137,6 +149,9 @@ public:
 
         int state = SM_INIT;
 
+        std::vector<geometry_msgs::Polygon> polygons;
+        std::vector<biorobotics::Polygon> polygons_viz;
+
         ros::Rate rate(30);
 
         while(ros::ok() && ((curr - prev).total_milliseconds() < timeout || timeout == 0) 
@@ -148,12 +163,28 @@ public:
                 break;
             }
             navigationUtil.getCurrPose(currX, currY, currTheta);
+            currPose = biorobotics::Vertex2(currX, currY);
+            if(init){
+                lastUpdatePose = biorobotics::Vertex2(currX, currY);
+                init = false;
+            }
+
+            int sensor = 0;
+            biorobotics::LaserScan * laserScan = laserUtil.getLaserScan();
+
+            if(laserScan != 0){
+                sensor = biorobotics::quantizedInputs(laserScan, currTheta, 0.28, 0.28);
+                std::cout << "sensor:" << sensor << std::endl;
+            }
 
             switch(state){
                 case SM_INIT:
-                    path = pathPlanningUtil.planPathSymbMapDjsk(currX, currY, goalX, goalY, success);
+                    indexCurrPath = 0;
+                    path = pathPlanningUtil.planPathSymbMapDjsk(currX, currY, goalX, goalY, 
+                            polygons, success);
                     if(success){
                         success = false;
+                        replanning = false;
                         state = SM_GET_NEXT_POSITION;
                     }
                     else
@@ -163,7 +194,10 @@ public:
                     if(indexCurrPath < path.poses.size()){
                         nextX = path.poses[indexCurrPath].pose.position.x;
                         nextY = path.poses[indexCurrPath].pose.position.y;
-                        state = SM_CALC_NEXT_MOTION;
+                        if(indexCurrPath == 0)
+                            state = SM_NAV_NEXT_GOAL;
+                        else
+                            state = SM_CALC_NEXT_MOTION;
                     }
                     else{
 
@@ -194,15 +228,27 @@ public:
                 case SM_NAV_NEXT_GOAL:
                     navigationUtil.asyncPotentialFields(nextX, nextY);
                     state = SM_WAIT_REACHED_GOAL;
+                    time_min = curr;
+                    lastUpdatePose = currPose;
                 break;
                 case SM_WAIT_REACHED_GOAL:
-                    if(navigationUtil.finishedCurrMotionPF()){
-                        indexCurrPath++;
-                        std::cout << "Go to the new position i:" << indexCurrPath << std::endl;
-                        state = SM_GET_NEXT_POSITION;
+                    if(currPose.sub(lastUpdatePose).norm() > ratio){
+                        lastUpdatePose = currPose;
+                        time_min = curr;
                     }
-                    else
-                        state = SM_WAIT_REACHED_GOAL;
+                    if((curr - time_min).total_milliseconds() > 6000){
+                        navigationUtil.stopMotion();
+                        state = SM_AVOIDANCE;
+                    }
+                    else{
+                        if(navigationUtil.finishedCurrMotionPF()){
+                            indexCurrPath++;
+                            std::cout << "Go to the new position i:" << indexCurrPath << std::endl;
+                            state = SM_GET_NEXT_POSITION;
+                        }
+                        else
+                            state = SM_WAIT_REACHED_GOAL;
+                    }
                 break;
                 case SM_CORRECT_ANGLE:
                     turn = goalTheta - currTheta;
@@ -215,7 +261,37 @@ public:
                     state = SM_FINISH;
                     navigationUtil.stopMotion();
                 break;
+                case SM_STOP:
+                    navigationUtil.syncMoveDist(-0.1, false, 0);
+                    state = SM_NAV_NEXT_GOAL;
+                break;
+                case SM_AVOIDANCE:
+                    if(sensor == 1)
+                        state = SM_AVOIDANCE_LEFT;
+                    else if(sensor == 2)
+                        state = SM_AVOIDANCE_RIGHT;
+                    else if(sensor == 3)
+                        state = SM_INIT;
+                    else
+                        state = SM_INIT;
+                    polygons = biorobotics::getSensorPolygon(laserScan, currX, currY, currTheta, 0.8, 0.24);
+                    polygons_ptr = biorobotics::convertGeometryMsgToPolygons(polygons, 
+                            polygons_ptr, &num_polygons);
+                    polygons_viz = std::vector<biorobotics::Polygon>(
+                            polygons_ptr, polygons_ptr + num_polygons);
+                    navigationUtil.syncMoveDist(-0.1, false, 0);
+                break;
+                case SM_AVOIDANCE_LEFT:
+                    navigationUtil.syncMoveDist(-0.1, true, 0);
+                    state = SM_INIT;
+                break;
+                case SM_AVOIDANCE_RIGHT:
+                    navigationUtil.syncMoveDist(0.1, true, 0);
+                    state = SM_INIT;
+                break;
             }
+            sendToVizPolygonMarker(polygons_viz, "sensor_polygon", &loc_marker_pub);
+            curr = boost::posix_time::second_clock::local_time();
             rate.sleep();
             ros::spinOnce();
         }
@@ -233,8 +309,14 @@ private:
 
     PathPlanningUtil pathPlanningUtil;
     NavigationUtil navigationUtil;
+    LaserScanUtil laserUtil;
 
     std::map<std::string, std::vector<float> > locations;
+
+    biorobotics::Polygon * polygons_ptr;
+    int num_polygons;
+
+    ros::Publisher loc_marker_pub;
 };
 
 class MotionPlannerGridAction {
@@ -245,8 +327,10 @@ class MotionPlannerGridAction {
         SM_NAV_NEXT_GOAL = 2,
         SM_WAIT_REACHED_GOAL = 3,
         SM_CORRECT_ANGLE = 4,
-        SM_REPLANNING = 5,
-        SM_FINISH = 6
+        SM_AVOIDANCE_BACK = 5,
+        SM_AVOIDANCE_LEFT = 6,
+        SM_AVOIDANCE_RIGHT = 7,
+        SM_FINISH = 8
     };
 
 public:
@@ -316,7 +400,7 @@ public:
             biorobotics::LaserScan * laserScan = laserUtil.getLaserScan();
             int sensor = 0;
             if(laserScan != 0){
-                sensor = biorobotics::quantizedInputs(laserScan, currTheta, 0.4, 0.4);
+                sensor = biorobotics::quantizedInputs(laserScan, currTheta, 0.34, 0.34);
                 std::cout << "sensor:" << sensor << std::endl;
             }
 
@@ -355,7 +439,7 @@ public:
                 case SM_WAIT_REACHED_GOAL:
                     if(sensor > 0){
                         navigationUtil.stopMotion();
-                        state = SM_REPLANNING;
+                        state = SM_AVOIDANCE_BACK;
                     }
                     else{
                         //if(navigationUtil.finishedCurrMotionPF()){
@@ -379,16 +463,25 @@ public:
                     state = SM_FINISH;
                     navigationUtil.stopMotion();
                 break;
-                case SM_REPLANNING:
+                case SM_AVOIDANCE_BACK:
+                    navigationUtil.syncMoveDist(-0.1, false, 0);
                     if(sensor == 1)
-                        navigationUtil.syncMoveDist(-0.2, true, 0);
+                        state = SM_AVOIDANCE_LEFT;
                     else if(sensor == 2)
-                        navigationUtil.syncMoveDist(0.2, true, 0);
+                        state = SM_AVOIDANCE_RIGHT;
                     else if(sensor == 3)
-                        navigationUtil.syncMoveDist(-0.2, false, 0);
+                        state = SM_AVOIDANCE_LEFT;
+                break;
+                case SM_AVOIDANCE_LEFT:
+                    navigationUtil.syncMoveDist(-0.1, true, 0);
+                    state = SM_INIT;
+                break;
+                case SM_AVOIDANCE_RIGHT:
+                    navigationUtil.syncMoveDist(0.1, true, 0);
                     state = SM_INIT;
                 break;
             }
+            curr = boost::posix_time::second_clock::local_time();
             rate.sleep();
             ros::spinOnce();
         }

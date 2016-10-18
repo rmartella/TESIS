@@ -2,8 +2,10 @@
     <remap from="/hardware/mobile_base/odometry" to="/navigation/localization/base_pose_ground_truth"/>
     <remap from="/navigation/localization/amcl_pose" to="/navigation/localization/current_pose"/>
     <param name="robot_description" command="cat $(find knowledge)/urdf/justina.xml" />
-    <param name="file_env" value="$(find knowledge)/wrl/random_1.wrl"/>
-    <param name="file_env_unknown" value="$(find knowledge)/wrl/random_1_unknown.wrl"/>
+    <!-- <param name="file_env" value="$(find knowledge)/wrl/random_1.wrl"/>
+    <param name="file_env_unknown" value="$(find knowledge)/wrl/random_1_unknown.wrl"/> -->
+    <param name="file_env" value="$(find knowledge)/wrl/bioroboticsmap.wrl"/>
+    <param name="file_env_unknown" value="$(find knowledge)/wrl/bioroboticsmap_unknown.wrl"/>
    
     <node name="gmapping_link_publisher" pkg="tf" type="static_transform_publisher" args="0 0 0.0 0 0 0 map odom 100"/>
     
@@ -21,8 +23,10 @@
 
     <node name="basic_motion" pkg="navigation" type="basic_motion" output="screen"/>
 
+    <!-- <node name="map_server" pkg="map_server" type="map_server" output="screen" 
+                    args="$(find knowledge)/occupancy_grids/random_1_simul.yaml"/> -->
     <node name="map_server" pkg="map_server" type="map_server" output="screen" 
-                     args="$(find knowledge)/occupancy_grids/random_1_simul.yaml"/>
+                    args="$(find knowledge)/occupancy_grids/bioroboticsmap_simul.yaml"/>
 
     <node name="path_planning" pkg="path_planning" type="path_planning" output="screen">
     	<rosparam file="$(find launch)/launch/costmap_common_params.yaml" command="load" ns="global_costmap" />
@@ -32,9 +36,11 @@
 	    <node name="joy" pkg="joy" type="joy_node" output="screen"/>
     </group>
     <node name="joystick_teleop" pkg="joystick_teleop" type="joystick_teleop_node.py" output="screen" />
-
+    <node name="pf" pkg="navigation" type="potential_filds" output="screen" />
+    <!-- <node name="motion_planner" pkg="motion_planner" type="motion_planner" output="screen" 
+        args="-f $(find knowledge)/locations/known_locations_2.txt"/> -->
     <node name="motion_planner" pkg="motion_planner" type="motion_planner" output="screen" 
-        args="-f $(find knowledge)/locations/known_locations_2.txt"/>
+        args="-f $(find knowledge)/locations/known_locations.txt"/>
 
     <node name="rviz" pkg="rviz" type="rviz" args="-d $(find knowledge)/rviz/rviz_navigation.rviz"/>
 

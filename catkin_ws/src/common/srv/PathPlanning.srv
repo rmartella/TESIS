@@ -1,5 +1,6 @@
 geometry_msgs/Pose2D start
 geometry_msgs/Pose2D goal
+geometry_msgs/Polygon[] polygons
 bool usingOccupancyGrids
 ---
 nav_msgs/Path path
