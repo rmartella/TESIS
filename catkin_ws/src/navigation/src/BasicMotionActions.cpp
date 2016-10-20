@@ -31,9 +31,9 @@ public:
 	void doGoalMotion(float goalX, float goalY, float goalTheta,
 			bool correctAngle, bool moveBackwards, bool moveLateral,
 			float timeOut, bool &success, bool& preempted,  biorobotics::Polygon * polygons,
-			int num_polygons, ActionType actionType);
+			int num_polygons, ActionType actionType, float tolerance);
 	void doAngleMotion(float goalTheta, float timeOut, bool &success, bool& preempted,
-			biorobotics::Polygon * polygons, int num_polygons, ActionType actionType);
+			biorobotics::Polygon * polygons, int num_polygons, ActionType actionType, float tolerance);
 	tf::TransformListener* getTfListener() {
 		return this->tf_listener;
 	}
@@ -76,7 +76,8 @@ void BasicMotion::initRosConnection(ros::NodeHandle *n) {
 
 void BasicMotion::doGoalMotion(float goalX, float goalY, float goalTheta,
 		bool correctAngle, bool moveBackwards, bool moveLateral, float timeout,
-		bool& success, bool& preempted, biorobotics::Polygon * polygons, int num_polygons, ActionType actionType) {
+		bool& success, bool& preempted, biorobotics::Polygon * polygons, int num_polygons, 
+		ActionType actionType, float tolerance = 0.035) {
 	ros::Rate rate(30);
 	bool correctFinalAngle = false;
 	tf::StampedTransform transform;
@@ -123,7 +124,7 @@ void BasicMotion::doGoalMotion(float goalX, float goalY, float goalTheta,
 			float errorX = goalX - currentX;
 			float errorY = goalY - currentY;
 			float error = sqrt(pow(errorX, 2) + pow(errorY, 2));
-			if (error < 0.035) {
+			if (error < tolerance) {
 				speeds.data[0] = 0;
 				speeds.data[1] = 0;
 				pubSpeeds.publish(speeds);
@@ -208,7 +209,7 @@ void BasicMotion::doGoalMotion(float goalX, float goalY, float goalTheta,
 }
 
 void BasicMotion::doAngleMotion(float goalTheta, float timeout, bool& success, bool& preempted, 
-		biorobotics::Polygon * polygons, int num_polygons, ActionType actionType) {
+		biorobotics::Polygon * polygons, int num_polygons, ActionType actionType, float tolerance = 0.04) {
 	ros::Rate rate(30);
 	tf::StampedTransform transform;
 	float currentX, currentY, currentTheta;
@@ -252,7 +253,7 @@ void BasicMotion::doAngleMotion(float goalTheta, float timeout, bool& success, b
 		if (errorAngle <= -M_PI)
 			errorAngle += 2 * M_PI;
 
-		if (fabs(errorAngle) < 0.04) {
+		if (fabs(errorAngle) < tolerance) {
 			speeds.data[0] = 0;
 			speeds.data[1] = 0;
 			pubSpeeds.publish(speeds);
@@ -473,7 +474,7 @@ public:
 					polygons_ptr, &num_polygons);
 
 		bm->doGoalMotion(msg->pose.x, msg->pose.y, msg->pose.theta, msg->correctAngle, false,
-				false, msg->timeout, success, preempted, polygons_ptr, num_polygons, POSE);
+				false, msg->timeout, success, preempted, polygons_ptr, num_polygons, POSE, 0.05);
 
 		if(!preempted){
 			result.success = success;

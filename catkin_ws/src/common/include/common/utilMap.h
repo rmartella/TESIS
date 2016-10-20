@@ -535,7 +535,7 @@ std::vector<geometry_msgs::Polygon> getSensorPolygon(LaserScan * laserScan, floa
 				Vertex2 v2(x2, y2);
 				Vertex2 v3(x3, y3);
 				float det = getDeterminant(v1, v2, v3);
-				if(fabs(det) < 0.0001)
+				if(fabs(det) < 0.001)
 					vIndex2 = i;
 				else{
 					foundLine = false;
@@ -552,6 +552,11 @@ std::vector<geometry_msgs::Polygon> getSensorPolygon(LaserScan * laserScan, floa
 			tmpVIndex2 = vIndex2;
 			vIndex1 = i + 1;
 			vIndex2 = i + 1;
+		}
+		if(i == laserScan->num_scans - 1){
+			foundLine = false;
+			tmpVIndex1 = vIndex1;
+			tmpVIndex2 = vIndex2;
 		}
 		if(tmpVIndex1 != tmpVIndex2 && tmpVIndex2 <= laserScan->num_scans && !foundLine){
 			geometry_msgs::Polygon polygon;
@@ -600,8 +605,9 @@ std::vector<geometry_msgs::Polygon> getSensorPolygon(LaserScan * laserScan, floa
 			polygons.push_back(polygon);
 		}
 	}
+	std::cout << "Size sensor polygons: " << polygons.size() << std::endl;
 
-	if(polygons.size() > 0){
+	/*if(polygons.size() > 0){
 		geometry_msgs::Polygon polygon;
 		float a1 = theta - M_PI_4;
 		float x1 = xpos + (ratio + 0.1) * cos(a1);
@@ -646,7 +652,7 @@ std::vector<geometry_msgs::Polygon> getSensorPolygon(LaserScan * laserScan, floa
 		}
 		polygon.points.push_back(p);
 		polygons.push_back(polygon);
-	}
+	}*/
 
 	return polygons;
 }

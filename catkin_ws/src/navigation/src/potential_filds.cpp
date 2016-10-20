@@ -21,7 +21,7 @@ public:
 					false);
 		as->start();
 
-		algoPf = new PotentialFields(2.65, 0.59, 2.5, 1.8, 3.0);
+		algoPf = new PotentialFields(3.65, 0.59, 0.28, 12.4, 1.65);
 
 		laserUtil.initRosConnection(&nh);
 		navigationUtil.initRosConnection(&nh);
@@ -81,7 +81,7 @@ public:
 			float errorX = goalX - robotTransform.getOrigin().x();
 			float errorY = goalY - robotTransform.getOrigin().y();
 			float error = sqrt(pow(errorX, 2) + pow(errorY, 2));
-			if (error < 0.1) {
+			if (error < 0.15) {
 				navigationUtil.stopMotion();
 				success = true;
 				break;

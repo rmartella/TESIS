@@ -35,7 +35,7 @@ float getNextPosition(float a3, float a2, float t) {
 	return xt;
 }
 
-int quantizedInputs(LaserScan * laserScan, float angleRobot, float thray, float thsensor) {
+int quantizedInputs(LaserScan * laserScan, float angleRobot, float thray, float thsensor, float range) {
 	float sd = 0.0f;
 	float si = 0.0f;
 	float averageI;
@@ -47,18 +47,20 @@ int quantizedInputs(LaserScan * laserScan, float angleRobot, float thray, float 
 	int value = 0;
 	for (unsigned int i = 0; i < laserScan->num_scans; i++) {
 		float angleSensor = angleRobot + laserScan->angle_min + i * laserScan->angle_increment;
-		if (angleSensor < angleRobot) {
-			numD++;
-			if(laserScan->ranges[i] <= thray)
-				sd += laserScan->ranges[i];
-		} else {
-			numI++;
-			if(laserScan->ranges[i] <= thray)
-				si += laserScan->ranges[i];
+		if((laserScan->angle_min + i * laserScan->angle_increment) >= -range && 
+				(laserScan->angle_min + i * laserScan->angle_increment) <= range){
+			if (angleSensor < angleRobot) {
+				numD++;
+				if(laserScan->ranges[i] <= thray)
+					sd += laserScan->ranges[i];
+			} else {
+				numI++;
+				if(laserScan->ranges[i] <= thray)
+					si += laserScan->ranges[i];
+			}
 		}
 	}
-	std::cout << "countNoSenseD:" << countNoSenseD << std::endl;
-	std::cout << "countNoSenseD:" << countNoSenseD << std::endl;
+
 	std::cout << "numD:" << numD << std::endl;
 	std::cout << "numI:" << numI << std::endl;
 	std::cout << "sd:" << sd << std::endl;

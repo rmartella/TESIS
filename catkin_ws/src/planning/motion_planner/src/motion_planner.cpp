@@ -85,8 +85,8 @@ class MotionPlannerSymAction {
         SM_AVOIDANCE = 8,
         SM_AVOIDANCE_LEFT = 9,
         SM_AVOIDANCE_RIGHT = 10,
-        SM_FINISH = 11,
-        SM_STOP = 12,
+        SM_AVOIDANCE_CREATE_POLYGONS = 11,
+        SM_FINISH = 12,
     };
 
 public:
@@ -152,7 +152,7 @@ public:
         std::vector<geometry_msgs::Polygon> polygons;
         std::vector<biorobotics::Polygon> polygons_viz;
 
-        ros::Rate rate(30);
+        ros::Rate rate(10);
 
         while(ros::ok() && ((curr - prev).total_milliseconds() < timeout || timeout == 0) 
                 && state != SM_FINISH){
@@ -172,10 +172,8 @@ public:
             int sensor = 0;
             biorobotics::LaserScan * laserScan = laserUtil.getLaserScan();
 
-            if(laserScan != 0){
-                sensor = biorobotics::quantizedInputs(laserScan, currTheta, 0.28, 0.28);
-                std::cout << "sensor:" << sensor << std::endl;
-            }
+            if(laserScan != 0)
+                sensor = biorobotics::quantizedInputs(laserScan, currTheta, 0.7, 0.4, M_PI_4);
 
             switch(state){
                 case SM_INIT:
@@ -243,7 +241,6 @@ public:
                     else{
                         if(navigationUtil.finishedCurrMotionPF()){
                             indexCurrPath++;
-                            std::cout << "Go to the new position i:" << indexCurrPath << std::endl;
                             state = SM_GET_NEXT_POSITION;
                         }
                         else
@@ -261,33 +258,37 @@ public:
                     state = SM_FINISH;
                     navigationUtil.stopMotion();
                 break;
-                case SM_STOP:
-                    navigationUtil.syncMoveDist(-0.1, false, 0);
-                    state = SM_NAV_NEXT_GOAL;
-                break;
                 case SM_AVOIDANCE:
-                    if(sensor == 1)
-                        state = SM_AVOIDANCE_LEFT;
-                    else if(sensor == 2)
-                        state = SM_AVOIDANCE_RIGHT;
-                    else if(sensor == 3)
-                        state = SM_INIT;
-                    else
-                        state = SM_INIT;
-                    polygons = biorobotics::getSensorPolygon(laserScan, currX, currY, currTheta, 0.8, 0.24);
+                    if(sensor > 0){
+                        if(sensor == 1)
+                            state = SM_AVOIDANCE_LEFT;
+                        else if(sensor == 2)
+                            state = SM_AVOIDANCE_RIGHT;
+                        else if(sensor == 3)
+                            state = SM_AVOIDANCE_CREATE_POLYGONS;
+                        navigationUtil.syncMoveDist(-0.2, false, 0);
+                    }
+                    else{
+                        navigationUtil.syncMoveDist(0.2, false, 0);
+                        state = SM_AVOIDANCE_CREATE_POLYGONS;
+                    }
+                break;
+                case SM_AVOIDANCE_LEFT:
+                    navigationUtil.syncMoveDist(-0.2, true, 0);
+                    state = SM_AVOIDANCE_CREATE_POLYGONS;
+                break;
+                case SM_AVOIDANCE_RIGHT:
+                    navigationUtil.syncMoveDist(0.2, true, 0);
+                    state = SM_AVOIDANCE_CREATE_POLYGONS;
+                break;
+                case SM_AVOIDANCE_CREATE_POLYGONS:
+                    polygons = biorobotics::getSensorPolygon(laserScan, currX, currY, currTheta, 1.0, 0.24);
                     polygons_ptr = biorobotics::convertGeometryMsgToPolygons(polygons, 
                             polygons_ptr, &num_polygons);
                     polygons_viz = std::vector<biorobotics::Polygon>(
                             polygons_ptr, polygons_ptr + num_polygons);
-                    navigationUtil.syncMoveDist(-0.1, false, 0);
-                break;
-                case SM_AVOIDANCE_LEFT:
-                    navigationUtil.syncMoveDist(-0.1, true, 0);
                     state = SM_INIT;
-                break;
-                case SM_AVOIDANCE_RIGHT:
-                    navigationUtil.syncMoveDist(0.1, true, 0);
-                    state = SM_INIT;
+                    //boost::this_thread::sleep(boost::posix_time::milliseconds(20000));
                 break;
             }
             sendToVizPolygonMarker(polygons_viz, "sensor_polygon", &loc_marker_pub);
@@ -399,10 +400,9 @@ public:
 
             biorobotics::LaserScan * laserScan = laserUtil.getLaserScan();
             int sensor = 0;
-            if(laserScan != 0){
-                sensor = biorobotics::quantizedInputs(laserScan, currTheta, 0.34, 0.34);
-                std::cout << "sensor:" << sensor << std::endl;
-            }
+            if(laserScan != 0)
+                sensor = biorobotics::quantizedInputs(laserScan, currTheta, 0.27, 0.3, M_PI_4);
+            //sensor = biorobotics::quantizedInputs(laserScan, currTheta, 0.34, 0.39, M_PI_2 + M_PI_4);
 
             switch(state){
                 case SM_INIT:
@@ -445,7 +445,6 @@ public:
                         //if(navigationUtil.finishedCurrMotionPF()){
                         if(navigationUtil.finishedCurrMotionPose()){
                             indexCurrPath++;
-                            std::cout << "Go to the new position i:" << indexCurrPath << std::endl;
                             state = SM_GET_NEXT_POSITION;
                         }
                         else
@@ -464,20 +463,27 @@ public:
                     navigationUtil.stopMotion();
                 break;
                 case SM_AVOIDANCE_BACK:
-                    navigationUtil.syncMoveDist(-0.1, false, 0);
-                    if(sensor == 1)
-                        state = SM_AVOIDANCE_LEFT;
-                    else if(sensor == 2)
-                        state = SM_AVOIDANCE_RIGHT;
-                    else if(sensor == 3)
-                        state = SM_AVOIDANCE_LEFT;
+                    if(sensor > 0){
+                        if(sensor == 1)
+                            state = SM_AVOIDANCE_LEFT;
+                        else if(sensor == 2)
+                            state = SM_AVOIDANCE_RIGHT;
+                        else if(sensor == 3)
+                            state = SM_INIT;
+                        navigationUtil.syncMoveDist(-0.2, false, 0);
+                    }
+                    else{
+                        navigationUtil.syncMoveDist(0.2, false, 0);
+                        state = SM_INIT;
+                    }
+                    navigationUtil.syncMoveDist(-0.2, false, 0);
                 break;
                 case SM_AVOIDANCE_LEFT:
-                    navigationUtil.syncMoveDist(-0.1, true, 0);
+                    navigationUtil.syncMoveDist(-0.2, true, 0);
                     state = SM_INIT;
                 break;
                 case SM_AVOIDANCE_RIGHT:
-                    navigationUtil.syncMoveDist(0.1, true, 0);
+                    navigationUtil.syncMoveDist(0.2, true, 0);
                     state = SM_INIT;
                 break;
             }
