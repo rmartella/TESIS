@@ -85,8 +85,10 @@ Vertex2 PotentialFields::computeAtractionForze(Vertex2 position,
     float module = position.sub(goal).norm();
     Vertex2 atractionForze = Vertex2::Zero();
     if (module <= da) {
-        atractionForze.x = epsilon1 * (position.x - goal.x);
-        atractionForze.y = epsilon1 * (position.y - goal.y);
+        atractionForze.x = epsilon2 / module
+                * (position.x - goal.x);
+        atractionForze.y = epsilon2 / module
+                * (position.y - goal.y);
     } else {
         atractionForze.x = epsilon2 / module
                 * (position.x - goal.x);

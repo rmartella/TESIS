@@ -47,7 +47,6 @@ float ** createCost(bool ** adyacencies, int sizeAdyacencies,
 
 Node dijsktra(bool ** adyacencies, int sizeAdyacencies, Vertex2 * vertexMap) {
 	float ** cost = createCost(adyacencies, sizeAdyacencies, vertexMap);
-
 	int prev[sizeAdyacencies], selected[sizeAdyacencies], i, m, start, j;
 	float dist[sizeAdyacencies], min, d;
 	for (i = 0; i < sizeAdyacencies; i++) {
@@ -72,28 +71,38 @@ Node dijsktra(bool ** adyacencies, int sizeAdyacencies, Vertex2 * vertexMap) {
 				m = i;
 			}
 		}
-		start = m;
-		selected[start] = 1;
+		if(m != -1){
+			start = m;
+			selected[start] = 1;
+		}
+		else
+			break;
 	}
-	start = sizeAdyacencies - 1;
-	int * previousVertexTmp = (int *) malloc(sizeof(int));
-	j = 0;
-	while (start != -1) {
-		previousVertexTmp = (int *) realloc(previousVertexTmp,
-				sizeof(int) * (j + 1));
-		previousVertexTmp[j] = start;
-		j++;
-		start = prev[start];
-	}
-	int * previousVertex = (int *) malloc(sizeof(int) * (j - 1));
-	for (int i = 0; i < j - 1; i++) {
-		previousVertex[i] = previousVertexTmp[j - i - 1];
-	}
-	free(previousVertexTmp);
-	free(cost);
+	if(m != -1){
+		start = sizeAdyacencies - 1;
+		int * previousVertexTmp = (int *) malloc(sizeof(int));
+		j = 0;
+		while (start != -1) {
+			previousVertexTmp = (int *) realloc(previousVertexTmp,
+					sizeof(int) * (j + 1));
+			previousVertexTmp[j] = start;
+			j++;
+			start = prev[start];
+		}
+		int * previousVertex = (int *) malloc(sizeof(int) * (j - 1));
+		for (int i = 0; i < j - 1; i++) {
+			previousVertex[i] = previousVertexTmp[j - i - 1];
+		}
+		free(previousVertexTmp);
+		free(cost);
 
-	Node nodePath = { sizeAdyacencies - 1, previousVertex, j - 1 };
-	return nodePath;
+		Node nodePath = { sizeAdyacencies - 1, previousVertex, j - 1 };
+		return nodePath;
+	}
+	else {
+		Node nodePath = { 0, 0, 0 };
+		return nodePath;
+	}
 
 }
 

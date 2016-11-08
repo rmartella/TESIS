@@ -69,27 +69,31 @@ bool pathPlanningWithSymbolicMapDjskCallback(common::PathPlanning::Request& req,
 	vertexMap = addVertexInitEndToVertexMap(init, end, vertexMap,
 			&sizeVertexMap);
 	std::cout << "Add Vertex to init and end:" << std::endl;
+
 	pathDijk = dijsktra(adyacencies, sizeAdyacencies, vertexMap);
-	std::cout << "Dijsktra end:" << std::endl;
 
 	nav_msgs::Path path;
-	path.header.frame_id = "map";
-	for (int i = 0; i < pathDijk.size; i++) {
+
+	if(pathDijk.size > 0){
+		path.header.frame_id = "map";
+		for (int i = 0; i < pathDijk.size; i++) {
+			geometry_msgs::PoseStamped poseNode;
+			poseNode.pose.position.x = vertexMap[pathDijk.indexPrevious[i]].x;
+			poseNode.pose.position.y = vertexMap[pathDijk.indexPrevious[i]].y;
+			poseNode.pose.position.z = 0.0;
+			poseNode.pose.orientation.w = 1.0;
+			poseNode.header.frame_id = "map";
+			path.poses.push_back(poseNode);
+		}
+
 		geometry_msgs::PoseStamped poseNode;
-		poseNode.pose.position.x = vertexMap[pathDijk.indexPrevious[i]].x;
-		poseNode.pose.position.y = vertexMap[pathDijk.indexPrevious[i]].y;
-		poseNode.pose.position.z = 0.0;
+		poseNode.pose.position.x = vertexMap[pathDijk.index].x;
+		poseNode.pose.position.y = vertexMap[pathDijk.index].y;
 		poseNode.pose.orientation.w = 1.0;
 		poseNode.header.frame_id = "map";
 		path.poses.push_back(poseNode);
 	}
 
-	geometry_msgs::PoseStamped poseNode;
-	poseNode.pose.position.x = vertexMap[pathDijk.index].x;
-	poseNode.pose.position.y = vertexMap[pathDijk.index].y;
-	poseNode.pose.orientation.w = 1.0;
-	poseNode.header.frame_id = "map";
-	path.poses.push_back(poseNode);
 	lastPath = path;
 	resp.path = path;
 

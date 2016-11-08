@@ -295,7 +295,7 @@ bool ** computeMapTopologic(std::vector<Polygon> polygons,
 							adyacencies[offset[h] + j + 1][offset[h] + j] = 1;
 						} else {
 							adyacencies[offset[h] + j][offset[h]] = 1;
-							adyacencies[offset[h]][offset[h] + j];
+							adyacencies[offset[h]][offset[h] + j] = 1;
 						}
 					}
 				}
@@ -319,7 +319,7 @@ void computeParallelLines(Segment segment, Segment * segment1,
 		segment2->v1.y = segment.v1.y;
 		segment2->v2.x = segment.v2.x + ratio;
 		segment2->v2.y = segment.v2.y;
-	} else if (fabs(delY) <= 0.3) {
+	} else if (fabs(delY) <= 0.01) {
 		segment1->v1.x = segment.v1.x;
 		segment1->v1.y = segment.v1.y - ratio;
 		segment1->v2.x = segment.v2.x;
@@ -331,8 +331,8 @@ void computeParallelLines(Segment segment, Segment * segment1,
 	} else {
 		float inverPendient = -delX / delY;
 
-		float xaux1 = segment.v1.x - 10 * ratio;
-		float xaux2 = segment.v1.x + 10 * ratio;
+		float xaux1 = segment.v1.x - 100 * ratio;
+		float xaux2 = segment.v1.x + 100 * ratio;
 		float yaux1 = inverPendient * (xaux1 - segment.v1.x) + segment.v1.y;
 		float yaux2 = inverPendient * (xaux2 - segment.v1.x) + segment.v1.y;
 		float a = pow(xaux2 - xaux1, 2) + pow(yaux2 - yaux1, 2);
@@ -351,8 +351,8 @@ void computeParallelLines(Segment segment, Segment * segment1,
 		segment2->v1.x = x2int;
 		segment2->v1.y = y2int;
 
-		xaux1 = segment.v2.x - 10 * ratio;
-		xaux2 = segment.v2.x + 10 * ratio;
+		xaux1 = segment.v2.x - 100 * ratio;
+		xaux2 = segment.v2.x + 100 * ratio;
 		yaux1 = inverPendient * (xaux1 - segment.v2.x) + segment.v2.y;
 		yaux2 = inverPendient * (xaux2 - segment.v2.x) + segment.v2.y;
 		a = pow(xaux2 - xaux1, 2) + pow(yaux2 - yaux1, 2);
@@ -535,7 +535,7 @@ std::vector<geometry_msgs::Polygon> getSensorPolygon(LaserScan * laserScan, floa
 				Vertex2 v2(x2, y2);
 				Vertex2 v3(x3, y3);
 				float det = getDeterminant(v1, v2, v3);
-				if(fabs(det) < 0.001)
+				if(fabs(det) < 0.0001)
 					vIndex2 = i;
 				else{
 					foundLine = false;
@@ -569,7 +569,7 @@ std::vector<geometry_msgs::Polygon> getSensorPolygon(LaserScan * laserScan, floa
 			Segment s(Vertex2(x1, y1), Vertex2(x2, y2));
 			Segment s1;
 			Segment s2;
-			computeParallelLines(s, &s1, &s2, 0.01);
+			computeParallelLines(s, &s1, &s2, 0.006);
 			Vertex2 v1(s1.v1.x, s1.v1.y);
 			Vertex2 v2(s1.v2.x, s1.v2.y);
 			Vertex2 v3(s2.v2.x, s2.v2.y);
