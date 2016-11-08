@@ -261,7 +261,7 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.03
       Style: Spheres
-      Topic: /scan
+      Topic: /hardware/scan
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
@@ -296,7 +296,8 @@ Visualization Manager:
       Name: Marker
       Namespaces:
         floor_marker: false
-        objects_marker: true
+        known_objects_marker: true
+        unknown_objects_marker: true
         walls_marker: true
       Queue Size: 100
       Value: true
@@ -331,7 +332,8 @@ Visualization Manager:
       Marker Topic: /map_markers
       Name: Marker
       Namespaces:
-        {}
+        grown_polygons: true
+        map_markerz: true
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -366,22 +368,22 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 11.5854
+      Distance: 4.69635
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.443347
-        Y: 1.8892
-        Z: 1.66893e-06
+        X: -1.36814
+        Y: 3.1293
+        Z: 2.6226e-06
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 1.0698
+      Pitch: 0.969797
       Target Frame: <Fixed Frame>
       Value: XYOrbit (rviz)
-      Yaw: 4.60042
+      Yaw: 4.95224
     Saved: ~
 Window Geometry:
   Displays:
@@ -399,5 +401,5 @@ Window Geometry:
   Views:
     collapsed: true
   Width: 1303
-  X: 1417
+  X: 1423
   Y: 24

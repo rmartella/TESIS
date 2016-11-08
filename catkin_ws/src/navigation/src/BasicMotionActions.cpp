@@ -526,7 +526,7 @@ public:
 						timeout == 0 ?
 								0 :
 								timeout - (curr - prev).total_milliseconds(),
-						success, preempted, polygons_ptr, num_polygons, PATH);
+						success, preempted, polygons_ptr, num_polygons, PATH, 0.05);
 				if (success)
 					indexCurrPath++;
 				rate.sleep();

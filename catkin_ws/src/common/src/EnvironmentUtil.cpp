@@ -17,9 +17,9 @@ EnvironmentUtil::EnvironmentUtil() {
 
 EnvironmentUtil::EnvironmentUtil(ros::NodeHandle * n) {
 	clientAll = new ros::ServiceClient(
-			n->serviceClient<common::Environment>("all_environment_service"));
+			n->serviceClient<common::Environment>("/all_environment_service"));
 	clientKnown = new ros::ServiceClient(
-			n->serviceClient<common::Environment>("known_environment_service"));
+			n->serviceClient<common::Environment>("/known_environment_service"));
 }
 
 EnvironmentUtil::~EnvironmentUtil() {
@@ -29,9 +29,9 @@ EnvironmentUtil::~EnvironmentUtil() {
 
 void EnvironmentUtil::initRosConnection(ros::NodeHandle * n) {
 	clientAll = new ros::ServiceClient(
-			n->serviceClient<common::Environment>("all_environment_service"));
+			n->serviceClient<common::Environment>("/all_environment_service"));
 	clientKnown = new ros::ServiceClient(
-			n->serviceClient<common::Environment>("known_environment_service"));
+			n->serviceClient<common::Environment>("/known_environment_service"));
 }
 
 std::vector<geometry_msgs::Polygon> EnvironmentUtil::getAllPolygons(){

@@ -324,14 +324,13 @@ class MotionPlannerGridAction {
 
     enum States{
         SM_INIT = 0,
-        SM_GET_NEXT_POSITION = 1,
-        SM_NAV_NEXT_GOAL = 2,
-        SM_WAIT_REACHED_GOAL = 3,
-        SM_CORRECT_ANGLE = 4,
-        SM_AVOIDANCE_BACK = 5,
-        SM_AVOIDANCE_LEFT = 6,
-        SM_AVOIDANCE_RIGHT = 7,
-        SM_FINISH = 8
+        SM_GET_NEXT_PATH = 1,
+        SM_WAIT_REACHED_PATH = 2,
+        SM_CORRECT_ANGLE = 3,
+        SM_AVOIDANCE_BACK = 4,
+        SM_AVOIDANCE_LEFT = 5,
+        SM_AVOIDANCE_RIGHT = 6,
+        SM_FINISH = 7
     };
 
 public:
@@ -401,8 +400,8 @@ public:
             biorobotics::LaserScan * laserScan = laserUtil.getLaserScan();
             int sensor = 0;
             if(laserScan != 0)
-                sensor = biorobotics::quantizedInputs(laserScan, currTheta, 0.27, 0.3, M_PI_4);
-            //sensor = biorobotics::quantizedInputs(laserScan, currTheta, 0.34, 0.39, M_PI_2 + M_PI_4);
+                sensor = biorobotics::quantizedInputs(laserScan, currTheta, 0.34, 0.39, M_PI_4);
+                //sensor = biorobotics::quantizedInputs(laserScan, currTheta, 0.27, 0.3, M_PI_4);
 
             switch(state){
                 case SM_INIT:
@@ -410,45 +409,32 @@ public:
                     path = pathPlanningUtil.planPathGridMap(currX, currY, goalX, goalY, success);
                     if(success){
                         success = false;
-                        state = SM_GET_NEXT_POSITION;
+                        state = SM_GET_NEXT_PATH;
                     }
                     else
                         state = SM_FINISH;
                 break;
-                case SM_GET_NEXT_POSITION:
-                    if(indexCurrPath < path.poses.size()){
-                        nextX = path.poses[indexCurrPath].pose.position.x;
-                        nextY = path.poses[indexCurrPath].pose.position.y;
-                        state = SM_NAV_NEXT_GOAL;
-                    }
-                    else{
-
-                        if(correctAngle)
-                            state = SM_CORRECT_ANGLE;
-                        else{
-                            success = true;
-                            state = SM_FINISH;
-                        }
-                    }
-                break;
-                case SM_NAV_NEXT_GOAL:
+                case SM_GET_NEXT_PATH:
                     //navigationUtil.asyncPotentialFields(nextX, nextY);
-                    navigationUtil.asyncMovePose(nextX, nextY, 0, false);
-                    state = SM_WAIT_REACHED_GOAL;
+                    navigationUtil.asyncMovePath(path);
+                    state = SM_WAIT_REACHED_PATH;
                 break;
-                case SM_WAIT_REACHED_GOAL:
+                case SM_WAIT_REACHED_PATH:
                     if(sensor > 0){
                         navigationUtil.stopMotion();
                         state = SM_AVOIDANCE_BACK;
                     }
                     else{
-                        //if(navigationUtil.finishedCurrMotionPF()){
-                        if(navigationUtil.finishedCurrMotionPose()){
-                            indexCurrPath++;
-                            state = SM_GET_NEXT_POSITION;
+                        if(navigationUtil.finishedCurrMotionPath()){
+                            if(correctAngle)
+                                state = SM_CORRECT_ANGLE;
+                            else{
+                                success = true;
+                                state = SM_FINISH;
+                            }
                         }
                         else
-                            state = SM_WAIT_REACHED_GOAL;
+                            state = SM_WAIT_REACHED_PATH;
                     }
                 break;
                 case SM_CORRECT_ANGLE:

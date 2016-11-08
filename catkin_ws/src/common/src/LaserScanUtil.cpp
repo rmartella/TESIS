@@ -7,7 +7,7 @@ LaserScanUtil::LaserScanUtil(){
 
 LaserScanUtil::LaserScanUtil(ros::NodeHandle * n){
 	laserScan = nullptr;
-	subscriber = n->subscribe("scan", 1,
+	subscriber = n->subscribe("/hardware/scan", 1,
 			&LaserScanUtil::executeCallback, this);
 }
 
@@ -15,7 +15,7 @@ LaserScanUtil::~LaserScanUtil(){
 }
 
 void LaserScanUtil::initRosConnection(ros::NodeHandle * n){
-	subscriber = n->subscribe("scan", 1,
+	subscriber = n->subscribe("/hardware/scan", 1,
 			&LaserScanUtil::executeCallback, this);
 }
 

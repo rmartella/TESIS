@@ -19,8 +19,6 @@
 
     <node name="environment" pkg="environment" type="environment" output="screen" args="4.7 5.35"/>
 
-    <node name="laser_scan_publisher" pkg="laser_simul" type="laser_scan_publisher"/>
-
     <node name="basic_motion" pkg="navigation" type="basic_motion" output="screen"/>
 
     <!-- <node name="map_server" pkg="map_server" type="map_server" output="screen" 
@@ -33,6 +31,7 @@
         <rosparam file="$(find launch)/launch/global_costmap_params.yaml" command="load" />
     </node>
     <group ns="hardware">
+        <node name="laser_scan_publisher" pkg="laser_simul" type="laser_scan_publisher"/>
 	    <node name="joy" pkg="joy" type="joy_node" output="screen"/>
     </group>
     <node name="joystick_teleop" pkg="joystick_teleop" type="joystick_teleop_node.py" output="screen" />

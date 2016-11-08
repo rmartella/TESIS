@@ -36,7 +36,7 @@ int main(int argc, char ** argv) {
 	ros::NodeHandle n;
 	ros::Rate rate(30);
 
-	ros::Publisher scan_pub = n.advertise<sensor_msgs::LaserScan>("scan", 1);
+	ros::Publisher scan_pub = n.advertise<sensor_msgs::LaserScan>("/hardware/scan", 1);
 
 	EnvironmentUtil envu(&n);
 	//RobotPose robotPose;
@@ -51,6 +51,7 @@ int main(int argc, char ** argv) {
 
 	polygons_ptr = envu.convertGeometryMsgToPolygons(envu.getAllPolygons(),
 				polygons_ptr, &num_polygons);
+	std::cout << "num_polygons:" << num_polygons << std::endl;
 
 	while (ros::ok()) {
 
