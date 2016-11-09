@@ -36,7 +36,6 @@
     <node name="basic_motion" pkg="navigation" type="basic_motion" output="screen"/>
     <node name="map_server" pkg="map_server" type="map_server" output="screen" 
                     args="$(find knowledge)/occupancy_grids/bioroboticsmap_simul.yaml"/>
-    <node name="fake_localization" pkg="fake_localization" type="fake_localization"/>
     <group ns="navigation">
            <group ns="localization">
                <node name="map_server" pkg="map_server" type="map_server" output="screen" 

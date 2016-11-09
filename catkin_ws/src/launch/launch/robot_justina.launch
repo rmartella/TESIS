@@ -24,7 +24,7 @@
     <!-- <node name="map_server" pkg="map_server" type="map_server" output="screen" 
                     args="$(find knowledge)/occupancy_grids/random_1_simul.yaml"/> -->
     <node name="map_server" pkg="map_server" type="map_server" output="screen" 
-                    args="$(find knowledge)/occupancy_grids/bioroboticsmap_simul.yaml"/>
+                    args="$(find knowledge)/occupancy_grids/bioroboticsmap_simul_2.yaml"/>
 
     <node name="path_planning" pkg="path_planning" type="path_planning" output="screen">
     	<rosparam file="$(find launch)/launch/costmap_common_params.yaml" command="load" ns="global_costmap" />

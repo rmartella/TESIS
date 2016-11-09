@@ -8,13 +8,19 @@
     
     <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher"/>
 
-    <node name="mobile_base" pkg="mobile_base" type="omni_base_simul_node.py" output="screen"/>
-    <node name="left_arm" pkg="arms" type="left_arm_simul_node.py" output="screen"/>
-    <node name="right_arm" pkg="arms" type="right_arm_simul_node.py" output="screen"/>
-    <node name="head" pkg="head" type="head_simul_node.py" output="screen"/>
-    <node name="torso" pkg="torso" type="torso_simul_node.py" output="screen"/>
+    <group ns="hardware">
+           <node name="mobile_base" pkg="mobile_base" type="omni_base_node.py" output="screen" args="--simul"/>
+           <!-- <node name="mobile_base" pkg="mobile_base" type="omni_base_simul_node.py" output="screen"/> -->
+           <node name="left_arm" pkg="arms" type="left_arm_simul_node.py" output="screen"/>
+           <node name="right_arm" pkg="arms" type="right_arm_simul_node.py" output="screen"/>
+           <node name="head" pkg="head" type="head_simul_node.py" output="screen"/>
+           <node name="torso" pkg="torso" type="torso_simul_node.py" output="screen"/>
+           <node name="joy" pkg="joy" type="joy_node" output="screen"/>
+           <!-- <node name="laser_simul" pkg="laser_simulator" type="laser_simulator_node" output="screen"/> -->
+           <node name="laser_scan_publisher" pkg="laser_simul" type="laser_scan_publisher"/>
+    </group>
 
-    <node name="environment" pkg="environment" type="environment" output="screen"/>
+    <node name="environment" pkg="environment" type="environment" output="screen" args="4.7 5.35"/>
 
     <node name="laser_scan_publisher" pkg="laser_simul" type="laser_scan_publisher"/>
 
@@ -22,22 +28,19 @@
 
     <node name="rviz" pkg="rviz" type="rviz" args="-d $(find knowledge)/rviz/rviz_mapping.rviz"/>
 
-    <node name="gmapping" pkg="gmapping" type="slam_gmapping" args="scan:=/scan" output="screen">
+    <node name="gmapping" pkg="gmapping" type="slam_gmapping" args="scan:=/hardware/scan" output="screen">
         <param name="map_update_interval" value="1" />
         <param name="maxUrange" value="8.0"/>
         <param name="linearUpdate" value="0.3"/>
         <param name="angularUpdate" value="0.2"/>
-        <param name="xmin" value="-50"/>
-        <param name="ymin" value="-20"/>
-        <param name="xmax" value="50"/>
-        <param name="ymax" value="20"/>
+        <param name="xmin" value="-15"/>
+        <param name="ymin" value="-15"/>
+        <param name="xmax" value="15"/>
+        <param name="ymax" value="15"/>
         <param name="maxRange" value="8.0"/>
         <param name="minimumScore" value="100"/>
     </node>
 
-    <group ns="hardware">
-	    <node name="joy" pkg="joy" type="joy_node" output="screen"/>
-    </group>
     <node name="joystick_teleop" pkg="joystick_teleop" type="joystick_teleop_node.py" output="screen" />
 
  </launch>

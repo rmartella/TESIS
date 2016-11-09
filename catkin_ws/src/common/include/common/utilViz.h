@@ -26,7 +26,7 @@ void sendToVizMap(Vertex2 * vertex, bool ** adyacencies, int sizeAdyacencies,
 	visualization_msgs::Marker map_marker;
 	map_marker.header.frame_id = "/map";
 	map_marker.header.stamp = ros::Time::now();
-	map_marker.ns = "map_markerz";
+	map_marker.ns = "map_marker";
 	map_marker.action = visualization_msgs::Marker::ADD;
 	map_marker.pose.orientation.w = 1.0;
 	map_marker.id = 2;

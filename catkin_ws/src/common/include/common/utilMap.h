@@ -535,7 +535,8 @@ std::vector<geometry_msgs::Polygon> getSensorPolygon(LaserScan * laserScan, floa
 				Vertex2 v2(x2, y2);
 				Vertex2 v3(x3, y3);
 				float det = getDeterminant(v1, v2, v3);
-				if(fabs(det) < 0.0001)
+				//if(fabs(det) < 0.0001)
+				if(fabs(det) < 0.001)
 					vIndex2 = i;
 				else{
 					foundLine = false;
