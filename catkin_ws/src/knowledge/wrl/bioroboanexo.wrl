@@ -1,0 +1,29 @@
+;******************************************************************************
+;* File: random_1.wrl				     			      *
+;* Purpose: Definition of the forbidden and allowed areas in the Robot's      *
+;*          world. These areas are derivated from the objects in the	      *
+;*	    world.				      			      *
+;******************************************************************************
+ 
+( dimensions random 2.000000 2.000000 )
+
+
+( polygon wall external_wall_1 -8.84 6.87 6.85 7.18 6.85 7.20 -8.84 6.89 )
+( polygon wall external_wall_2 6.85 7.20 6.85 4.62 6.87 4.62 6.87 7.20)
+( polygon wall external_wall_3 6.87 4.62 0.743 4.50 0.743 4.48 6.87 4.60)
+( polygon wall external_wall_4 0.743 4.48 0.743 1.58 0.763 1.58 0.763 4.48 )
+( polygon wall external_wall_5 5.61 4.6 5.61 1.94 5.63 1.94 5.63 4.6 )
+( polygon wall external_wall_6 5.61 1.96 4.86 1.96 4.86 1.94 5.61 1.94 )
+( polygon wall external_wall_7 4.86 1.96 4.86 0.676 4.88 0.676 4.88 1.96 )
+( polygon wall external_wall_8 5.55 0.676 0.743 0.676 0.743 0.656 5.55 0.656 )
+( polygon wall external_wall_9 5.55 0.676 5.55 -3.64 5.57 -3.64 5.57 0.676)
+( polygon wall external_wall_10 5.57 -3.64 0.743 -3.64 0.743 -3.66 5.57 -3.66 )
+( polygon wall external_wall_11 0.743 -3.64 0.763 -3.64 0.763 -0.34 0.743 -0.34)
+( polygon wall external_wall_12 -1.88 4.44 -1.9 4.44 -1.88 -6.67 -1.86 -6.67 )
+#( polygon wall external_wall_13 4.860 4.380 8.000 4.380 8.000 4.400 4.860 4.400 )
+#( polygon wall external_wall_14 0.000 6.640 0.000 6.660 -4.000 6.660 -4.000 6.640 )
+#( polygon wall external_wall_15 5.310 6.640 8.000 6.640 8.000 6.660 5.310 6.660 )
+( polygon obstacle obs1 0.743 0.656 0.743 0.472 1.46 0.472 1.46 0.656 )
+( polygon obstacle obs2 0.763 -0.466 0.763 -3.64 1.25 -3.64 1.25 -0.466 )
+( polygon obstacle obs3 5.063 0.656 5.063 -3.64 5.55 -3.64 5.55 0.656 )
+( polygon obstacle obs4 3.47 0.656 3.47 0.00 4.14 0.00 4.14 0.656 )
