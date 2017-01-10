@@ -11,7 +11,7 @@
 LaserScanUtil laserUtil;
 NavigationUtil navigationUtil;
 
-float DELTA = 0.1;
+float DELTA = 0.24;
 
 class GoalPotentialFieldsAction {
 public:

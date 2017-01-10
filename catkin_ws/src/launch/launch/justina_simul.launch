@@ -5,7 +5,7 @@
     <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher"/>
     <node name="gmapping_link_publisher" pkg="tf" type="static_transform_publisher" args="0 0 0.0 0 0 0 map odom 100"/>
     <param name="file_env" value="$(find knowledge)/wrl/bioroboanexo.wrl"/>
-    <!-- <param name="file_env_unknown" value="$(find knowledge)/wrl/bioroboticsmap_unknown.wrl"/> -->
+    <param name="file_env_unknown" value="$(find knowledge)/wrl/bioroboanexo_unknown.wrl"/>
 
     <group ns="hardware">
            <node name="mobile_base" pkg="mobile_base" type="omni_base_node.py" output="screen" args="--simul"/>

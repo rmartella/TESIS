@@ -31,7 +31,7 @@ public:
 	void doGoalMotion(float goalX, float goalY, float goalTheta,
 			bool correctAngle, bool moveBackwards, bool moveLateral,
 			float timeOut, bool &success, bool& preempted,  biorobotics::Polygon * polygons,
-			int num_polygons, ActionType actionType, float tolerance);
+			int num_polygons, ActionType actionType, float tolerance, bool stopMotion);
 	void doAngleMotion(float goalTheta, float timeOut, bool &success, bool& preempted,
 			biorobotics::Polygon * polygons, int num_polygons, ActionType actionType, float tolerance);
 	tf::TransformListener* getTfListener() {
@@ -77,7 +77,7 @@ void BasicMotion::initRosConnection(ros::NodeHandle *n) {
 void BasicMotion::doGoalMotion(float goalX, float goalY, float goalTheta,
 		bool correctAngle, bool moveBackwards, bool moveLateral, float timeout,
 		bool& success, bool& preempted, biorobotics::Polygon * polygons, int num_polygons, 
-		ActionType actionType, float tolerance = 0.035) {
+		ActionType actionType, float tolerance = 0.035, bool stopMotion = false) {
 	ros::Rate rate(30);
 	bool correctFinalAngle = false;
 	tf::StampedTransform transform;
@@ -125,9 +125,11 @@ void BasicMotion::doGoalMotion(float goalX, float goalY, float goalTheta,
 			float errorY = goalY - currentY;
 			float error = sqrt(pow(errorX, 2) + pow(errorY, 2));
 			if (error < tolerance) {
-				speeds.data[0] = 0;
-				speeds.data[1] = 0;
-				pubSpeeds.publish(speeds);
+				if(stopMotion){
+					speeds.data[0] = 0;
+					speeds.data[1] = 0;
+					pubSpeeds.publish(speeds);
+				}
 				if (correctAngle)
 					correctFinalAngle = true;
 				else
@@ -155,9 +157,11 @@ void BasicMotion::doGoalMotion(float goalX, float goalY, float goalTheta,
 				errorAngle += 2 * M_PI;
 
 			if (fabs(errorAngle) < 0.05) {
-				speeds.data[0] = 0;
-				speeds.data[1] = 0;
-				pubSpeeds.publish(speeds);
+				if(stopMotion){
+					speeds.data[0] = 0;
+					speeds.data[1] = 0;
+					pubSpeeds.publish(speeds);
+				}
 				motionFinished = true;
 			} else {
 				control.CalculateSpeeds(currentTheta, goalTheta, speeds.data[0],
@@ -200,7 +204,7 @@ void BasicMotion::doGoalMotion(float goalX, float goalY, float goalTheta,
 				break;
 		}
 	}
-	if (!motionFinished || preempted) {
+	if (!motionFinished) {
 		speeds.data[0] = 0;
 		speeds.data[1] = 0;
 		pubSpeeds.publish(speeds);
@@ -507,7 +511,7 @@ public:
 		std::cout << "New Goal Patn:" << std::endl;
 		nav_msgs::Path path = msg->path;
 		int indexCurrPath = 0;
-		bool success, preempted;
+		bool success, preempted, stopMotion = false;
 
 		if(polygons_ptr == 0)
 			polygons_ptr = envu.convertGeometryMsgToPolygons(envu.getAllPolygons(),
@@ -515,18 +519,24 @@ public:
 
 		if (path.poses.size() > 0) {
 			float timeout = msg->timeout;
+			float tolerance;
 			boost::posix_time::ptime prev =
 					boost::posix_time::second_clock::local_time();
 			boost::posix_time::ptime curr = prev;
 			ros::Rate rate(30);
 			do {
+				if(indexCurrPath == path.poses.size() - 1)
+					stopMotion = true;
 				geometry_msgs::PoseStamped poseStmp = path.poses[indexCurrPath];
+				tolerance = (path.poses.size() - indexCurrPath)*0.05 + 0.1;
+				if(tolerance > 0.35)
+					tolerance = 0.35;
 				bm->doGoalMotion(poseStmp.pose.position.x,
-						poseStmp.pose.position.y, 0, false, false, false,
+						poseStmp.pose.position.y, 0, false, false, false, 
 						timeout == 0 ?
 								0 :
 								timeout - (curr - prev).total_milliseconds(),
-						success, preempted, polygons_ptr, num_polygons, PATH, 0.05);
+						success, preempted, polygons_ptr, num_polygons, PATH, tolerance, stopMotion);
 				if (success)
 					indexCurrPath++;
 				rate.sleep();

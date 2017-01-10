@@ -266,19 +266,19 @@ public:
                             state = SM_AVOIDANCE_RIGHT;
                         else if(sensor == 3)
                             state = SM_AVOIDANCE_CREATE_POLYGONS;
-                        navigationUtil.syncMoveDist(-0.2, false, 0);
+                        navigationUtil.syncMoveDist(-0.15, false, 0);
                     }
                     else{
-                        navigationUtil.syncMoveDist(0.2, false, 0);
+                        navigationUtil.syncMoveDist(0.15, false, 0);
                         state = SM_AVOIDANCE_CREATE_POLYGONS;
                     }
                 break;
                 case SM_AVOIDANCE_LEFT:
-                    navigationUtil.syncMoveDist(-0.2, true, 0);
+                    navigationUtil.syncMoveDist(-0.15, true, 0);
                     state = SM_AVOIDANCE_CREATE_POLYGONS;
                 break;
                 case SM_AVOIDANCE_RIGHT:
-                    navigationUtil.syncMoveDist(0.2, true, 0);
+                    navigationUtil.syncMoveDist(0.15, true, 0);
                     state = SM_AVOIDANCE_CREATE_POLYGONS;
                 break;
                 case SM_AVOIDANCE_CREATE_POLYGONS:
@@ -400,7 +400,8 @@ public:
             biorobotics::LaserScan * laserScan = laserUtil.getLaserScan();
             int sensor = 0;
             if(laserScan != 0)
-                sensor = biorobotics::quantizedInputs(laserScan, currTheta, 0.34, 0.39, M_PI_4);
+                sensor = biorobotics::quantizedInputs(laserScan, currTheta, 0.37, 0.29, M_PI_4);
+                //sensor = biorobotics::quantizedInputs(laserScan, currTheta, 0.7, 0.4, M_PI_4);
                 //sensor = biorobotics::quantizedInputs(laserScan, currTheta, 0.27, 0.3, M_PI_4);
 
             switch(state){
@@ -456,20 +457,19 @@ public:
                             state = SM_AVOIDANCE_RIGHT;
                         else if(sensor == 3)
                             state = SM_INIT;
-                        navigationUtil.syncMoveDist(-0.2, false, 0);
+                        navigationUtil.syncMoveDist(-0.15, false, 0);
                     }
                     else{
-                        navigationUtil.syncMoveDist(0.2, false, 0);
+                        navigationUtil.syncMoveDist(0.15, false, 0);
                         state = SM_INIT;
                     }
-                    navigationUtil.syncMoveDist(-0.2, false, 0);
                 break;
                 case SM_AVOIDANCE_LEFT:
-                    navigationUtil.syncMoveDist(-0.2, true, 0);
+                    navigationUtil.syncMoveDist(-0.15, true, 0);
                     state = SM_INIT;
                 break;
                 case SM_AVOIDANCE_RIGHT:
-                    navigationUtil.syncMoveDist(0.2, true, 0);
+                    navigationUtil.syncMoveDist(0.15, true, 0);
                     state = SM_INIT;
                 break;
             }
