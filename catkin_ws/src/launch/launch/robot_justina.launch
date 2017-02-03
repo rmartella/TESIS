@@ -4,8 +4,8 @@
     <param name="robot_description" command="cat $(find knowledge)/urdf/justina.xml" />
     <!-- <param name="file_env" value="$(find knowledge)/wrl/random_1.wrl"/>
     <param name="file_env_unknown" value="$(find knowledge)/wrl/random_1_unknown.wrl"/> -->
-    <param name="file_env" value="$(find knowledge)/wrl/bioroboticsmap.wrl"/>
-    <param name="file_env_unknown" value="$(find knowledge)/wrl/bioroboticsmap_unknown.wrl"/>
+    <param name="file_env" value="$(find knowledge)/wrl/bioroboanexo.wrl"/>
+    <param name="file_env_unknown" value="$(find knowledge)/wrl/bioroboanexo_unknown.wrl"/>
    
     <node name="gmapping_link_publisher" pkg="tf" type="static_transform_publisher" args="0 0 0.0 0 0 0 map odom 100"/>
     
@@ -17,14 +17,15 @@
     <node name="head" pkg="head" type="head_simul_node.py" output="screen"/>
     <node name="torso" pkg="torso" type="torso_simul_node.py" output="screen"/>
 
-    <node name="environment" pkg="environment" type="environment" output="screen" args="4.7 5.35"/>
+    <!-- <node name="environment" pkg="environment" type="environment" output="screen" args="4.7 5.35"/> -->
+    <node name="environment" pkg="environment" type="environment" output="screen" args="0 0"/>
 
     <node name="basic_motion" pkg="navigation" type="basic_motion" output="screen"/>
 
     <!-- <node name="map_server" pkg="map_server" type="map_server" output="screen" 
                     args="$(find knowledge)/occupancy_grids/random_1_simul.yaml"/> -->
     <node name="map_server" pkg="map_server" type="map_server" output="screen" 
-                    args="$(find knowledge)/occupancy_grids/bioroboticsmap_simul_2.yaml"/>
+                    args="$(find knowledge)/occupancy_grids/bioroboanexo3.yaml"/>
 
     <node name="path_planning" pkg="path_planning" type="path_planning" output="screen">
     	<rosparam file="$(find launch)/launch/costmap_common_params.yaml" command="load" ns="global_costmap" />
@@ -39,7 +40,7 @@
     <!-- <node name="motion_planner" pkg="motion_planner" type="motion_planner" output="screen" 
         args="-f $(find knowledge)/locations/known_locations_2.txt"/> -->
     <node name="motion_planner" pkg="motion_planner" type="motion_planner" output="screen" 
-        args="-f $(find knowledge)/locations/known_locations.txt"/>
+        args="-f $(find knowledge)/locations/known_locations_bioroboanexo.txt"/>
 
     <node name="rviz" pkg="rviz" type="rviz" args="-d $(find knowledge)/rviz/rviz_navigation.rviz"/>
 

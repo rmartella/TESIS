@@ -41,7 +41,7 @@ std::vector<biorobotics::Triangle> traingulate(
 		std::vector<biorobotics::Polygon> polygons) {
 	std::vector<biorobotics::Triangle> out;
 	float hightObs = 0.80000000;
-	float hightWalls = 4.00000000;
+	float hightWalls = 1.750000000;
 	float hight = 0.00000000;
 	int ind1;
 	int ind2;

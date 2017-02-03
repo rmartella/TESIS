@@ -15,11 +15,11 @@ int main(int argc, char ** argv){
 	float angle = atof(argv[2]);
 
 	bool success;
-	//nu.asyncMoveDist(3.00, true);
-	//success = nu.syncMoveDist(3.0, false, 8000);
-	nu.asyncMoveDistAngle(dis, angle);
-	//success = nu.syncMoveDistAngle(-dis, -angle, 6000);
-	//nu.asyncMovePose(0.0, 0.0, 1.5708);
+	//nu.asyncMoveDist(dis, false);
+	//success = nu.syncMoveDist(1.0, false, 8000);
+	//nu.asyncMoveDistAngle(dis, angle);
+	//success = nu.syncMoveDistAngle(dis, angle, 6000);
+	nu.asyncMovePose(3.95, -3.13, 0.0, 0);
 	//success = nu.syncMovePose(0.0, 0.0, 1.5708, 6000);
 	/*nu.asyncPotentialFields(-2.5, 8.0);
 	success = nu.syncPotentialFields(-2.5, 8.0, 3000);*/
